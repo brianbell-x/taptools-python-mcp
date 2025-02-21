@@ -7,6 +7,7 @@ import os
 import json
 import asyncio
 import logging
+from datetime import datetime
 from typing import Optional, Dict, Any, List
 from pydantic import BaseModel, Field
 from dotenv import load_dotenv
@@ -72,6 +73,10 @@ class ServerConfig(BaseModel):
     Holds config values for the TapTools MCP server.
     """
     api_key: str = Field(..., description="TapTools API key", alias="TAPTOOLS_API_KEY")
+    base_url: str = Field(
+        default="https://openapi.taptools.io/api/v1",
+        description="TapTools API base URL"
+    )
 
     @classmethod
     def from_env(cls, env_file: str = ".env"):
@@ -104,7 +109,7 @@ class TapToolsServer:
     async def __aenter__(self):
         """Initialize client and APIs when entering context"""
         self._client = httpx.AsyncClient(
-            base_url="https://taptools.io",
+            base_url=self.config.base_url,
             headers={
                 "Authorization": f"Bearer {self.config.api_key}",
                 "Content-Type": "application/json"
@@ -133,50 +138,71 @@ class TapToolsServer:
             endpoint: Optional endpoint name for context in error messages
             ctx: Optional Context object for client-side logging
         """
-        # Get traceback for debugging
+        # Get traceback for complete context
         import traceback
         tb = traceback.format_exc()
         
-        # Log error with context
-        context = f" while calling {endpoint}" if endpoint else ""
-        error_msg = f"Error in API call{context}: {str(e)}"
+        # Build error context dictionary for structured logging
+        error_context = {
+            'endpoint': endpoint,
+            'error_type': type(e).__name__,
+            'error_class': e.__class__.__name__,
+            'traceback': tb
+        }
         
+        if isinstance(e, TapToolsError):
+            error_context.update({
+                'tap_tools_error_type': e.error_type.value,
+                'status_code': e.status_code,
+                'has_error_details': bool(e.error_details),
+                'has_retry_after': bool(e.retry_after)
+            })
+        
+        # Enhanced error logging with context
+        error_msg = f"API error{f' in {endpoint}' if endpoint else ''}: {str(e)}"
         if ctx:
             await ctx.log("error", error_msg)
-            await ctx.debug(f"Full traceback:\n{tb}")
+            await ctx.debug(f"Error context:\n{json.dumps(error_context, indent=2)}")
         else:
-            logger.error(error_msg)
-            logger.debug(f"Full traceback:\n{tb}")
+            logger.error(error_msg, extra=error_context)
+            logger.debug(f"Error context:\n{json.dumps(error_context, indent=2)}")
         
         if isinstance(e, TapToolsError):
             error_code, message = e.to_mcp_error()
             
-            # Add endpoint context to message if available
+            # Add endpoint context to message
             if endpoint:
                 message = f"[{endpoint}] {message}"
             
-            # Log additional error details if available
+            # Enhanced error details logging
             if e.error_details:
-                debug_msg = f"Error details: {json.dumps(e.error_details, indent=2)}"
+                debug_msg = (
+                    f"Detailed error information:\n"
+                    f"{json.dumps(e.error_details, indent=2)}"
+                )
                 if ctx:
                     await ctx.debug(debug_msg)
                 else:
                     logger.debug(debug_msg)
-                    
+            
+            # Log rate limit information if present
             if e.retry_after:
-                info_msg = f"Rate limit will reset at: {e.retry_after.isoformat()}"
+                info_msg = (
+                    f"Rate limit will reset at: {e.retry_after.isoformat()} "
+                    f"(in {(e.retry_after - datetime.now()).total_seconds():.1f}s)"
+                )
                 if ctx:
                     await ctx.info(info_msg)
                 else:
                     logger.info(info_msg)
-                
+            
             # Include status code in message if available
             if e.status_code:
                 message = f"{message} (HTTP {e.status_code})"
-                
+            
             raise McpError(ErrorData(code=error_code, message=message))
         else:
-            # For unexpected errors, include traceback in debug log
+            # Unexpected errors get logged with full context
             if ctx:
                 await ctx.debug(f"Unexpected error traceback:\n{tb}")
             else:
@@ -185,7 +211,7 @@ class TapToolsServer:
             message = f"Unexpected error: {str(e)}"
             if endpoint:
                 message = f"[{endpoint}] {message}"
-                
+            
             raise McpError(ErrorData(
                 code=ErrorCode.API_ERROR,
                 message=message
@@ -726,21 +752,11 @@ class TapToolsServer:
         async def handle_verify_connection(ctx: Context) -> str:
             try:
                 await ctx.debug("Verifying TapTools API connection")
-                response = await self._client.get("/token/quote/available")
-                response.raise_for_status()
-                data = response.json()
+                result = await self.tokens_api.verify_connection()
                 await ctx.info("Successfully verified API connection")
-                return json.dumps({
-                    "success": True,
-                    "available_quotes": data
-                }, indent=2)
+                return json.dumps(result, indent=2)
             except Exception as e:
                 await self.handle_error(e, "verify_connection", ctx)
-
-    async def close(self):
-        """This method is kept for backward compatibility but is now a no-op
-        since client lifecycle is managed by the context manager"""
-        pass
 
     async def run_stdio_async(self):
         """

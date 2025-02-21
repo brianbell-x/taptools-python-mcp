@@ -28,45 +28,9 @@ from ..utils.exceptions import TapToolsError, ErrorType
 
 logger = logging.getLogger("taptools_mcp")
 
-class TokensAPI:
-    def __init__(self, client: httpx.AsyncClient):
-        self.client = client
+from .base import BaseAPI
 
-    async def _make_request(self, method: str, url: str, **kwargs) -> Dict[str, Any]:
-        """
-        Make an HTTP request with error handling.
-        
-        Args:
-            method: HTTP method (get, post, etc.)
-            url: API endpoint URL
-            **kwargs: Additional arguments for the request
-            
-        Returns:
-            API response as dictionary
-            
-        Raises:
-            TapToolsError: For any API or connection errors
-        """
-        try:
-            response = await getattr(self.client, method)(url, **kwargs)
-            response.raise_for_status()
-            return response.json()
-        except httpx.HTTPStatusError as e:
-            logger.error(f"HTTP error in request to {url}: {str(e)}")
-            raise TapToolsError.from_http_error(e)
-        except httpx.RequestError as e:
-            logger.error(f"Connection error in request to {url}: {str(e)}")
-            raise TapToolsError(
-                message=f"Connection error: {str(e)}",
-                error_type=ErrorType.CONNECTION
-            )
-        except Exception as e:
-            logger.error(f"Unexpected error in request to {url}: {str(e)}")
-            raise TapToolsError(
-                message=f"Unexpected error: {str(e)}",
-                error_type=ErrorType.UNKNOWN
-            )
-
+class TokensAPI(BaseAPI):
     async def get_token_mcap(self, request: TokenMcapRequest) -> TokenMcapResponse:
         """
         TapTools endpoint:

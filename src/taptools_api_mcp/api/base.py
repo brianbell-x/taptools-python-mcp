@@ -30,6 +30,22 @@ class BaseAPI:
     
     def __init__(self, client: httpx.AsyncClient):
         self.client = client
+        self._base_url = str(client.base_url)
+
+    @property
+    def base_url(self) -> str:
+        """Get the base URL for the API."""
+        return self._base_url
+
+    async def verify_connection(self) -> Dict[str, bool]:
+        """
+        Verify API connection by making a test request.
+        
+        Returns:
+            Dict with success status
+        """
+        await self._make_request('get', '/token/quote/available')
+        return {"success": True}
         
     def _should_retry(self, attempt: int, status_code: Optional[int], error: Exception) -> Tuple[bool, float]:
         """
@@ -81,29 +97,47 @@ class BaseAPI:
 
     def _validate_response(self, response: httpx.Response) -> None:
         """
-        Validate response and raise appropriate error if needed.
+        Validate response and raise appropriate TapToolsError if needed.
         
         Args:
             response: The HTTP response to validate
             
         Raises:
-            httpx.HTTPStatusError: If response indicates an error
+            TapToolsError: If response indicates an error
         """
         if response.status_code >= 400:
-            error_info = None
+            error_details = {
+                'status_code': response.status_code,
+                'headers': dict(response.headers),
+                'url': str(response.url)
+            }
+            
             try:
                 error_info = response.json()
                 error_message = error_info.get('message', str(response.status_code))
                 error_type = error_info.get('error', 'Unknown error')
                 detailed_message = f"{error_type}: {error_message}"
+                error_details['api_error'] = error_info
             except json.JSONDecodeError:
-                detailed_message = f"HTTP {response.status_code}: {response.text or 'No error details available'}"
+                # Truncate response text for logging
+                truncated_text = response.text[:1000] + "..." if len(response.text) > 1000 else response.text
+                detailed_message = f"HTTP {response.status_code}: {truncated_text or 'No error details available'}"
+                error_details['response_text'] = truncated_text
+                error_details['content_type'] = response.headers.get('content-type')
             
-            logger.error(f"API error response: {detailed_message}")
-            raise httpx.HTTPStatusError(
+            logger.error(f"API error response: {detailed_message}", extra=error_details)
+            
+            # Convert to httpx.HTTPStatusError first to maintain compatibility with from_http_error
+            http_error = httpx.HTTPStatusError(
                 detailed_message,
                 request=response.request,
                 response=response
+            )
+            
+            # Then convert to TapToolsError with all context
+            raise TapToolsError.from_http_error(
+                http_error,
+                message=detailed_message  # Use our enhanced message
             )
 
     async def _make_request(
@@ -130,16 +164,24 @@ class BaseAPI:
         """
         attempt = 0
         last_error = None
+        request_context = {
+            'method': method.upper(),
+            'url': url,
+            'kwargs': kwargs,
+            'max_retries': MAX_RETRIES
+        }
         
         while True:
             attempt += 1
+            request_context['attempt'] = attempt
+            
             try:
-                # Log request details for debugging
+                # Enhanced request logging
                 logger.debug(
                     f"Making {method.upper()} request to {url} "
-                    f"(attempt {attempt}/{MAX_RETRIES})"
+                    f"(attempt {attempt}/{MAX_RETRIES})",
+                    extra=request_context
                 )
-                logger.debug(f"Request parameters: {kwargs}")
                 
                 response = await getattr(self.client, method)(url, **kwargs)
                 
@@ -150,55 +192,81 @@ class BaseAPI:
                 try:
                     return response.json()
                 except json.JSONDecodeError as e:
-                    logger.error(f"Failed to parse JSON response: {str(e)}")
-                    logger.debug(f"Raw response content: {response.text}")
+                    # Truncate response text for logging to avoid overwhelming logs
+                    truncated_text = response.text[:1000] + "..." if len(response.text) > 1000 else response.text
+                    logger.error(
+                        f"Failed to parse JSON response: {str(e)}",
+                        extra={'response_text': truncated_text}
+                    )
+                    
                     raise TapToolsError(
-                        message="Invalid JSON response from API",
+                        message=f"Invalid JSON response from API: {str(e)}",
                         error_type=ErrorType.PARSE,
-                        raw_error=e
+                        raw_error=e,
+                        error_details={
+                            'response_text': truncated_text,
+                            'content_type': response.headers.get('content-type'),
+                            'content_length': len(response.text)
+                        }
                     )
                     
             except Exception as e:
                 last_error = e
-                status_code = None
-                
-                if isinstance(e, httpx.HTTPStatusError):
-                    status_code = e.response.status_code
+                status_code = getattr(e.response, 'status_code', None) if isinstance(e, httpx.HTTPStatusError) else None
+                error_context = {
+                    **request_context,
+                    'error_type': type(e).__name__,
+                    'status_code': status_code
+                }
                 
                 # Determine if we should retry
                 if retry_on_error:
                     should_retry, delay = self._should_retry(attempt, status_code, e)
                     if should_retry:
                         logger.warning(
-                            f"Request failed with error: {str(e)}. "
-                            f"Retrying in {delay:.1f} seconds... "
-                            f"(attempt {attempt}/{MAX_RETRIES})"
+                            f"Request failed ({type(e).__name__}): {str(e)}. "
+                            f"Retrying in {delay:.1f}s (attempt {attempt}/{MAX_RETRIES})",
+                            extra=error_context
                         )
                         await asyncio.sleep(delay)
                         continue
                 
-                # If we shouldn't retry or have exhausted retries, raise appropriate error
-                if isinstance(e, httpx.TimeoutException):
-                    logger.error(f"Request timeout: {str(e)}")
+                # Convert all errors to TapToolsError with enhanced context
+                if isinstance(e, TapToolsError):
+                    # Re-raise TapToolsError but add request context
+                    e.error_details = {
+                        **(e.error_details or {}),
+                        'request': {
+                            'method': method,
+                            'url': url,
+                            'attempt': attempt
+                        }
+                    }
+                    raise
+                elif isinstance(e, httpx.TimeoutException):
                     raise TapToolsError(
-                        message=f"Request timed out: {str(e)}",
+                        message=f"Request timed out after {self.client.timeout.read} seconds",
                         error_type=ErrorType.TIMEOUT,
-                        raw_error=e
+                        raw_error=e,
+                        error_details={'timeout_value': self.client.timeout.read}
                     )
                 elif isinstance(e, httpx.NetworkError):
-                    logger.error(f"Network error: {str(e)}")
                     raise TapToolsError(
-                        message=f"Network error: {str(e)}",
+                        message=f"Network error during {method.upper()} request to {url}: {str(e)}",
                         error_type=ErrorType.CONNECTION,
-                        raw_error=e
+                        raw_error=e,
+                        error_details={'request_context': request_context}
                     )
                 elif isinstance(e, httpx.HTTPStatusError):
-                    logger.error(f"HTTP error: {str(e)}")
+                    # from_http_error already provides good error context
                     raise TapToolsError.from_http_error(e)
                 else:
-                    logger.error(f"Unexpected error: {str(e)}")
                     raise TapToolsError(
-                        message=f"Unexpected error: {str(e)}",
+                        message=f"Unexpected error during API request: {str(e)}",
                         error_type=ErrorType.UNKNOWN,
-                        raw_error=e
+                        raw_error=e,
+                        error_details={
+                            'request_context': request_context,
+                            'error_class': e.__class__.__name__
+                        }
                     )
