@@ -12,7 +12,7 @@ dependencies = [
     "pytest-asyncio",
     "pytest-cov",
     "rich",
-    "structlog"
+    "structlog",
 ]
 
 [build-system]

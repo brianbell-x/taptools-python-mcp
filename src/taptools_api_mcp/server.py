@@ -1,7 +1,7 @@
 """
 TapTools MCP server implementation.
 
-Exposes TapTools endpoints as MCP tools. 
+Exposes TapTools endpoints as MCP tools.
 """
 import os
 import json
@@ -20,16 +20,19 @@ from mcp.shared.exceptions import McpError
 from .api.tokens import TokensAPI
 from .api.nfts import NftsAPI
 from .api.market import MarketAPI
+from .api.integration import IntegrationAPI
+from .api.onchain import OnchainAPI
+from .api.wallet import WalletAPI
+from .utils.exceptions import TapToolsError, ErrorCode, ErrorType
+
+from .models.tokens import *
+from .models.nfts import *
+from .models.market import *
+from .models.integration import *
+from .models.onchain import *
+from .models.wallet import *
 
 logger = logging.getLogger("taptools_mcp")
-
-# Custom error codes
-class ErrorCode:
-    AUTHENTICATION_ERROR = -32001
-    CONNECTION_ERROR = -32002
-    INVALID_PARAMETERS = -32003
-    API_ERROR = -32004
-
 
 class ServerConfig(BaseModel):
     """
@@ -46,7 +49,6 @@ class ServerConfig(BaseModel):
             raise ValueError("TAPTOOLS_API_KEY not found. Please set it in .env or environment.")
         return cls(TAPTOOLS_API_KEY=api_key)
 
-
 class TapToolsServer:
     """
     The main server that registers TapTools endpoints as MCP tools.
@@ -60,6 +62,9 @@ class TapToolsServer:
         self.tokens_api: Optional[TokensAPI] = None
         self.nfts_api: Optional[NftsAPI] = None
         self.market_api: Optional[MarketAPI] = None
+        self.integration_api: Optional[IntegrationAPI] = None
+        self.onchain_api: Optional[OnchainAPI] = None
+        self.wallet_api: Optional[WalletAPI] = None
 
         # Register all tools
         self.register_tools()
@@ -81,18 +86,137 @@ class TapToolsServer:
             self.tokens_api = TokensAPI(self.client)
             self.nfts_api = NftsAPI(self.client)
             self.market_api = MarketAPI(self.client)
+            self.integration_api = IntegrationAPI(self.client)
+            self.onchain_api = OnchainAPI(self.client)
+            self.wallet_api = WalletAPI(self.client)
+
+    def handle_error(self, e: Exception) -> None:
+        """
+        Convert various exceptions to McpError with appropriate error codes.
+        """
+        logger.error(f"Error in API call: {str(e)}")
+        
+        if isinstance(e, TapToolsError):
+            error_code, message = e.to_mcp_error()
+            raise McpError(ErrorData(code=error_code, message=message))
+        elif isinstance(e, httpx.HTTPStatusError):
+            error = TapToolsError.from_http_error(e)
+            error_code, message = error.to_mcp_error()
+            raise McpError(ErrorData(code=error_code, message=message))
+        elif isinstance(e, httpx.RequestError):
+            raise McpError(ErrorData(
+                code=ErrorCode.CONNECTION_ERROR,
+                message=f"Connection error: {str(e)}"
+            ))
+        elif isinstance(e, ValueError):
+            raise McpError(ErrorData(
+                code=ErrorCode.INVALID_PARAMETERS,
+                message=f"Invalid parameters: {str(e)}"
+            ))
+        else:
+            raise McpError(ErrorData(
+                code=ErrorCode.API_ERROR,
+                message=f"Unexpected error: {str(e)}"
+            ))
 
     def register_tools(self):
         """
         Register MCP tools for TapTools endpoints.
         """
+        # Token Tools
+        @self.app.tool(name="get_token_mcap", description="Get token market cap info")
+        async def handle_get_token_mcap(request: TokenMcapRequest) -> str:
+            await self.ensure_client()
+            try:
+                result = await self.tokens_api.get_token_mcap(request.unit)
+                return json.dumps(result, indent=2)
+            except Exception as e:
+                self.handle_error(e)
 
+        @self.app.tool(name="get_token_holders", description="Get total number of token holders")
+        async def handle_get_token_holders(request: TokenHoldersRequest) -> str:
+            await self.ensure_client()
+            try:
+                result = await self.tokens_api.get_token_holders(request.unit)
+                return json.dumps(result, indent=2)
+            except Exception as e:
+                self.handle_error(e)
+
+        @self.app.tool(name="get_token_holders_top", description="Get top token holders")
+        async def handle_get_token_holders_top(request: TokenTopHoldersRequest) -> str:
+            await self.ensure_client()
+            try:
+                result = await self.tokens_api.get_token_holders_top(
+                    request.unit,
+                    page=request.page,
+                    perPage=request.per_page
+                )
+                return json.dumps(result, indent=2)
+            except Exception as e:
+                self.handle_error(e)
+
+        # NFT Tools
+        @self.app.tool(name="get_nft_asset_sales", description="Get NFT asset sales history")
+        async def handle_get_nft_asset_sales(request: NFTAssetSalesRequest) -> str:
+            await self.ensure_client()
+            try:
+                result = await self.nfts_api.get_asset_sales(request.policy, request.name)
+                return json.dumps(result, indent=2)
+            except Exception as e:
+                self.handle_error(e)
+
+        @self.app.tool(name="get_nft_collection_stats", description="Get NFT collection stats")
+        async def handle_get_nft_collection_stats(request: NFTCollectionStatsRequest) -> str:
+            await self.ensure_client()
+            try:
+                result = await self.nfts_api.get_collection_stats(request.policy)
+                return json.dumps(result, indent=2)
+            except Exception as e:
+                self.handle_error(e)
+
+        # Market Tools
+        @self.app.tool(name="get_market_stats", description="Get market-wide statistics")
+        async def handle_get_market_stats(request: MarketStatsRequest) -> str:
+            await self.ensure_client()
+            try:
+                result = await self.market_api.get_market_stats(request.quote)
+                return json.dumps(result, indent=2)
+            except Exception as e:
+                self.handle_error(e)
+
+        # Integration Tools
+        @self.app.tool(name="get_integration_asset", description="Get asset details by ID")
+        async def handle_get_integration_asset(request: IntegrationAssetRequest) -> str:
+            await self.ensure_client()
+            try:
+                result = await self.integration_api.get_asset(request.id)
+                return json.dumps(result, indent=2)
+            except Exception as e:
+                self.handle_error(e)
+
+        # Onchain Tools
+        @self.app.tool(name="get_asset_supply", description="Get onchain asset supply")
+        async def handle_get_asset_supply(request: AssetSupplyRequest) -> str:
+            await self.ensure_client()
+            try:
+                result = await self.onchain_api.get_asset_supply(request.unit)
+                return json.dumps(result, indent=2)
+            except Exception as e:
+                self.handle_error(e)
+
+        # Wallet Tools
+        @self.app.tool(name="get_wallet_portfolio", description="Get wallet portfolio positions")
+        async def handle_get_wallet_portfolio(request: WalletPortfolioPositionsRequest) -> str:
+            await self.ensure_client()
+            try:
+                result = await self.wallet_api.get_portfolio_positions(request.address)
+                return json.dumps(result, indent=2)
+            except Exception as e:
+                self.handle_error(e)
+
+        # Verification Tool
         @self.app.tool(name="verify_connection", description="Verify TapTools API authentication")
         async def handle_verify_connection() -> str:
-            """
-            Check if the TapTools API key is valid by making a simple request,
-            e.g. get available quotes or basic market stats.
-            """
             await self.ensure_client()
             try:
                 resp = await self.client.get("/token/quote/available")
@@ -102,74 +226,8 @@ class TapToolsServer:
                     "success": True,
                     "available_quotes": data
                 }, indent=2)
-            except httpx.HTTPStatusError as e:
-                if e.response.status_code == 401:
-                    raise McpError(ErrorData(
-                        code=ErrorCode.AUTHENTICATION_ERROR,
-                        message="Invalid or unauthorized TapTools API key"
-                    ))
-                else:
-                    raise McpError(ErrorData(
-                        code=ErrorCode.API_ERROR,
-                        message=f"TapTools API error: {str(e)}"
-                    ))
             except Exception as e:
-                raise McpError(ErrorData(
-                    code=ErrorCode.API_ERROR,
-                    message=f"Unexpected error verifying connection: {str(e)}"
-                ))
-
-        @self.app.tool(name="get_token_price", description="Get aggregated token price from TapTools")
-        async def handle_get_token_price(unit: str) -> str:
-            """
-            unit: the token unit (policy + hex name) to fetch aggregated price. 
-                  Example: 'dda5fdb1002f73...' 
-            """
-            await self.ensure_client()
-            try:
-                resp = await self.tokens_api.get_token_price(unit)
-                return json.dumps(resp, indent=2)
-            except McpError:
-                raise
-            except Exception as e:
-                raise McpError(ErrorData(
-                    code=ErrorCode.API_ERROR,
-                    message=str(e)
-                ))
-
-        @self.app.tool(name="get_nft_collection_stats", description="Get stats for an NFT collection by policy ID")
-        async def handle_get_nft_collection_stats(policy_id: str) -> str:
-            """
-            policy_id: the policy ID of the NFT collection
-            """
-            await self.ensure_client()
-            try:
-                resp = await self.nfts_api.get_collection_stats(policy_id)
-                return json.dumps(resp, indent=2)
-            except McpError:
-                raise
-            except Exception as e:
-                raise McpError(ErrorData(
-                    code=ErrorCode.API_ERROR,
-                    message=str(e)
-                ))
-
-        @self.app.tool(name="get_market_stats", description="Get aggregated 24h market stats from TapTools")
-        async def handle_get_market_stats() -> str:
-            """
-            Return aggregated 24h stats from /market/stats (DEX volume, active addresses, etc.)
-            """
-            await self.ensure_client()
-            try:
-                resp = await self.market_api.get_market_stats()
-                return json.dumps(resp, indent=2)
-            except McpError:
-                raise
-            except Exception as e:
-                raise McpError(ErrorData(
-                    code=ErrorCode.API_ERROR,
-                    message=str(e)
-                ))
+                self.handle_error(e)
 
     async def close(self):
         if self.client:
@@ -183,7 +241,6 @@ class TapToolsServer:
         async with stdio_server() as (read_stream, write_stream):
             await self.app.run(read_stream, write_stream, self.app.create_initialization_options())
 
-
 async def main():
     """
     Main entry point for the TapTools MCP server.
@@ -196,4 +253,3 @@ async def main():
     except Exception as e:
         logger.error(f"Failed to start TapToolsServer: {str(e)}")
         raise
-

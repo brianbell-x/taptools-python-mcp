@@ -1,15 +1,15 @@
 """
-MarketAPI for aggregated market endpoints.
+WalletAPI for wallet-related endpoints.
 """
 import logging
 import httpx
-from typing import Dict, Any
+from typing import Dict, Any, Optional
 
 from ..utils.exceptions import TapToolsError, ErrorType
 
 logger = logging.getLogger("taptools_mcp")
 
-class MarketAPI:
+class WalletAPI:
     def __init__(self, client: httpx.AsyncClient):
         self.client = client
 
@@ -48,26 +48,47 @@ class MarketAPI:
                 error_type=ErrorType.UNKNOWN
             )
 
-    async def get_market_stats(self, quote: str = "ADA") -> Dict[str, Any]:
+    async def get_wallet_portfolio_positions(self, address: str) -> Dict[str, Any]:
         """
-        GET /market/stats
+        GET /wallet/portfolio/positions
         
-        Get aggregated market stats (24h DEX volume, active addresses).
-        
-        Args:
-            quote (str, optional): Quote currency (e.g. 'ADA'). Defaults to 'ADA'.
-        
-        Returns:
-            Dict[str, Any]: Market stats including:
-                - activeAddresses: Number of active addresses
-                - dexVolume: 24h DEX volume in quote currency
-        
-        Example response:
-            {
-                "activeAddresses": 24523,
-                "dexVolume": 8134621.35
-            }
+        Retrieve current wallet positions: tokens, NFTs, LP farms, etc.
         """
-        url = "/market/stats"
-        params = {"quote": quote}
+        url = "/wallet/portfolio/positions"
+        params = {"address": address}
+        return await self._make_request("get", url, params=params)
+
+    async def get_wallet_trades_tokens(
+        self, 
+        address: str, 
+        unit: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """
+        GET /wallet/trades/tokens
+        
+        Get token trade history for a wallet (optionally filter by token).
+        """
+        url = "/wallet/trades/tokens"
+        params = {"address": address}
+        if unit:
+            params["unit"] = unit
+        return await self._make_request("get", url, params=params)
+
+    async def get_wallet_value_trended(
+        self, 
+        address: str, 
+        timeframe: str = "30d", 
+        quote: str = "ADA"
+    ) -> Dict[str, Any]:
+        """
+        GET /wallet/value/trended
+        
+        Get historical value of a wallet in 4hr intervals.
+        """
+        url = "/wallet/value/trended"
+        params = {
+            "address": address,
+            "timeframe": timeframe,
+            "quote": quote
+        }
         return await self._make_request("get", url, params=params)
