@@ -1,21 +1,24 @@
 # TapTools API MCP - Features
 
-- **MCP Server**: Adheres to the Model Context Protocol spec, enabling AI assistant integration.
+- **MCP Server**: Adheres to the Model Context Protocol, enabling AI-based and programmatic usage.
 - **Token Tools**:
-  - `get_token_mcap`: Retrieve market cap data for a token.
-  - `get_token_price`: Return the aggregated price for a token.
-  - `list_top_tokens`: Show top tokens by volume or market cap.
+  - `get_token_mcap`: Retrieve market cap and supply data.
+  - `get_token_holders`: Number of holders for a given token.
+  - `get_token_holders_top`: List of top holders.
 - **NFT Tools**:
-  - `get_nft_sales`: Fetch sales history for an NFT asset.
-  - `get_nft_collection_stats`: Get stats for a specific NFT collection.
-  - `list_nft_listings`: List active NFT listings in a collection.
+  - `get_nft_asset_sales`: Sales history for a specific NFT asset.
+  - `get_nft_collection_stats`: Key stats for an NFT collection (floor price, volume, etc.).
 - **Market Tools**:
-  - `get_market_stats`: Aggregated 24h volume, active addresses, etc.
-  - `get_nft_market_stats`: High-level NFT market data (volume, sales).
-- **Configuration**: 
-  - Use `.env` or environment variables for `TAPTOOLS_API_KEY`.
-- **Testing**: 
-  - `test_connection.py` for quick local verification.
-  - Additional tests in `tests/` directory.
-
-Enjoy leveraging TapTools data seamlessly in your AI workflows!
+  - `get_market_stats`: Aggregated market data (volume, active addresses, etc.).
+- **Integration Tools**:
+  - `get_integration_asset`: Retrieve details of a token or integrated asset by ID.
+- **Onchain Tools**:
+  - `get_asset_supply`: Onchain supply for a token.
+- **Wallet Tools**:
+  - `get_wallet_portfolio`: Retrieve detailed wallet portfolio positions (ADA balance, tokens, NFTs, LP).
+- **Authentication Check**:
+  - `verify_connection`: Confirm TapTools API key validity and list supported quote currencies.
+- **Async & Secure**:
+  - Python `async` with httpx for concurrency, secure key usage from env/`.env` file.
+- **Testing**:
+  - Comprehensive test suite (unit & integration) covering each tool’s logic and error handling.

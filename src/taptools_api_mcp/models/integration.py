@@ -14,7 +14,7 @@ class IntegrationAsset(BaseModel):
     total_supply: int = Field(..., description="Total supply")
 
 class IntegrationAssetResponse(BaseModel):
-    asset: IntegrationAsset
+    __root__: IntegrationAsset = Field(..., description="Token details")
 
 # Integration Block Models
 class IntegrationBlockRequest(BaseModel):
@@ -26,16 +26,16 @@ class IntegrationBlock(BaseModel):
     block_timestamp: int = Field(..., description="Block timestamp")
 
 class IntegrationBlockResponse(BaseModel):
-    block: IntegrationBlock
+    __root__: IntegrationBlock = Field(..., description="Block information")
 
 # Integration Events Models
 class IntegrationEventsRequest(BaseModel):
     from_block: int = Field(..., description="Starting block number")
     to_block: int = Field(..., description="Ending block number")
-    limit: Optional[int] = Field(1000, description="Maximum number of events to return")
+    limit: Optional[int] = Field(1000, description="Maximum number of events to return, default 1000, max 1000")
 
 class IntegrationEventsResponse(BaseModel):
-    events: List[Dict] = Field(..., description="List of events")
+    __root__: List[Dict] = Field(..., description="List of events within block range")
 
 # Integration Exchange Models
 class IntegrationExchangeRequest(BaseModel):
@@ -47,11 +47,11 @@ class IntegrationExchange(BaseModel):
     name: str = Field(..., description="Exchange name")
 
 class IntegrationExchangeResponse(BaseModel):
-    exchange: IntegrationExchange
+    __root__: IntegrationExchange = Field(..., description="DEX details")
 
 # Integration Latest Block Models
 class IntegrationLatestBlockResponse(BaseModel):
-    block: IntegrationBlock = Field(..., description="Latest block information")
+    __root__: IntegrationBlock = Field(..., description="Latest processed block info")
 
 # Integration Pair Models
 class IntegrationPairRequest(BaseModel):
@@ -67,4 +67,4 @@ class IntegrationPair(BaseModel):
     id: str = Field(..., description="Pair ID")
 
 class IntegrationPairResponse(BaseModel):
-    pair: IntegrationPair
+    __root__: IntegrationPair = Field(..., description="Pair/pool details")

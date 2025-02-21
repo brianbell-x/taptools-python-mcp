@@ -7,7 +7,7 @@ class AssetSupplyRequest(BaseModel):
     unit: str = Field(..., description="Token unit identifier")
 
 class AssetSupplyResponse(BaseModel):
-    supply: int = Field(..., description="Current onchain supply")
+    __root__: Dict[str, int] = Field(..., description="Current onchain supply")
 
 # Address Info Models
 class AddressInfoRequest(BaseModel):
@@ -22,7 +22,7 @@ class AddressInfo(BaseModel):
     stake_address: str = Field(..., description="Stake address")
 
 class AddressInfoResponse(BaseModel):
-    info: AddressInfo
+    __root__: AddressInfo = Field(..., description="Address information")
 
 # Address UTXOs Models
 class AddressUTXOsRequest(BaseModel):
@@ -38,12 +38,16 @@ class UTXO(BaseModel):
     lovelace: str = Field(..., description="ADA amount in lovelace")
 
 class AddressUTXOsResponse(BaseModel):
-    utxos: List[UTXO]
+    __root__: List[UTXO] = Field(..., description="List of UTXOs")
 
 # Transaction UTXOs Models
 class TransactionUTXOsRequest(BaseModel):
     hash: str = Field(..., description="Transaction hash")
 
+class TransactionUTXOs(BaseModel):
+    hash: str = Field(..., description="Transaction hash")
+    inputs: List[Dict] = Field(..., description="List of input UTXOs")
+    outputs: List[Dict] = Field(..., description="List of output UTXOs")
+
 class TransactionUTXOsResponse(BaseModel):
-    inputs: Dict[str, List[Dict]] = Field(..., description="Dictionary mapping input addresses to lists of UTXOs")
-    outputs: Dict[str, List[Dict]] = Field(..., description="Dictionary mapping output addresses to lists of UTXOs")
+    __root__: TransactionUTXOs = Field(..., description="Transaction UTXOs")

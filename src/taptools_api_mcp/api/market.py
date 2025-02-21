@@ -7,7 +7,7 @@ from typing import Dict, Any
 
 from ..models.market import (
     MarketStatsRequest, MarketStatsResponse,
-    MarketStats, MetricsResponse
+    MarketStats, MetricsResponse, MetricsCall
 )
 from ..utils.exceptions import TapToolsError, ErrorType
 
@@ -65,3 +65,13 @@ class MarketAPI:
             active_addresses=response_data["activeAddresses"],
             dex_volume=response_data["dexVolume"]
         ))
+
+    async def get_metrics(self) -> MetricsResponse:
+        """
+        GET /metrics
+        
+        Get daily request counts from the past 30 days.
+        """
+        url = "/metrics"
+        response_data = await self._make_request("get", url)
+        return MetricsResponse(metrics=[MetricsCall(**call) for call in response_data])

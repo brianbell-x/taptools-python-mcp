@@ -11,7 +11,7 @@ class MarketStats(BaseModel):
     dex_volume: float = Field(..., description="24h DEX trading volume")
 
 class MarketStatsResponse(BaseModel):
-    stats: MarketStats
+    __root__: MarketStats = Field(..., description="Aggregated market stats")
 
 # Metrics Models
 class MetricsCall(BaseModel):
@@ -19,4 +19,4 @@ class MetricsCall(BaseModel):
     time: int = Field(..., description="Unix timestamp")
 
 class MetricsResponse(BaseModel):
-    metrics: List[MetricsCall]
+    __root__: List[MetricsCall] = Field(..., description="Daily request counts from the past 30 days")

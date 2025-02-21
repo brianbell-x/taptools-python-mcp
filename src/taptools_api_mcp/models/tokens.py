@@ -162,7 +162,7 @@ class TokenPoolsResponse(BaseModel):
 
 # Token Prices Models
 class TokenPricesRequest(BaseModel):
-    units: List[str] = Field(..., description="List of token units")
+    units: List[str] = Field(..., description="List of token units to get prices for")
 
 class TokenPricesResponse(BaseModel):
     __root__: Dict[str, float] = Field(..., description="Token prices by unit")
@@ -170,7 +170,7 @@ class TokenPricesResponse(BaseModel):
 # Token Price Changes Models
 class TokenPriceChangesRequest(BaseModel):
     unit: str = Field(..., description="Token unit identifier")
-    timeframes: Optional[str] = Field(None, description="Comma-delimited timeframes")
+    timeframes: Optional[str] = Field(None, description="Comma-delimited timeframes (5m,1h,4h,6h,24h,7d,30d,60d,90d)")
 
 class TokenPriceChangesResponse(BaseModel):
     __root__: Dict[str, float] = Field(..., description="Price changes by timeframe")
@@ -253,19 +253,26 @@ class TokenTradesRequest(BaseModel):
     timeframe: Optional[str] = Field("30d", description="Time frame for trades")
     sort_by: Optional[str] = Field("amount", description="Sort field")
     order: Optional[str] = Field("desc", description="Sort order: 'asc' or 'desc'")
-    unit: Optional[str] = Field("", description="Token unit identifier")
+    unit: Optional[str] = Field(None, description="Token unit identifier")
     min_amount: Optional[int] = Field(None, description="Minimum trade amount")
     from_ts: Optional[int] = Field(None, description="From timestamp")
     page: Optional[int] = Field(1, description="Page number")
     per_page: Optional[int] = Field(100, description="Items per page, max 100")
 
 class TokenTrade(BaseModel):
-    amount: float = Field(..., description="Trade amount")
+    action: str = Field(..., description="Trade action (buy/sell)")
+    address: str = Field(..., description="Trader's address")
+    exchange: str = Field(..., description="Exchange name")
+    hash: str = Field(..., description="Transaction hash")
+    lp_token_unit: str = Field(..., description="LP token unit")
     price: float = Field(..., description="Trade price")
-    side: str = Field(..., description="Trade side: 'buy' or 'sell'")
     time: int = Field(..., description="Unix timestamp of trade")
-    token: str = Field(..., description="Token unit identifier")
-    value: float = Field(..., description="Trade value")
+    token_a: str = Field(..., description="First token unit")
+    token_a_amount: float = Field(..., description="Amount of first token")
+    token_a_name: str = Field(..., description="Name of first token")
+    token_b: str = Field(..., description="Second token unit")
+    token_b_amount: float = Field(..., description="Amount of second token")
+    token_b_name: str = Field(..., description="Name of second token")
 
 class TokenTradesResponse(BaseModel):
-    __root__: List[TokenTrade] = Field(..., description="List of token trades")
+    __root__: List[TokenTrade] = Field(..., description="List of token trades across DEXes")

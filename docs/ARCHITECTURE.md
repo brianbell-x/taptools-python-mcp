@@ -3,35 +3,41 @@
 ## Overview
 
 The TapTools API MCP server is an application that:
-1. Loads your TapTools API key from environment variables.
-2. Sets up an MCP server (via `mcp-python-sdk`).
-3. Defines "tools" that correspond to TapTools endpoints (e.g. `get_token_info`, `get_nft_collection`).
-4. Exposes these tools over standard input/output so that any MCP-compatible LLM can invoke them.
+
+1. Loads your TapTools API key from environment variables or `.env` file.
+2. Sets up an MCP server (via `mcp-python-sdk`) on standard input/output by default (or optionally other transports).
+3. Defines "tools" that correspond to TapTools endpoints (e.g., `get_token_mcap`, `get_nft_collection_stats`, etc.).
+4. Exposes these tools so any MCP-compatible LLM/client can invoke them, receiving JSON responses.
 
 ## Components
 
-- **server.py**: Core server logic, sets up the `TapToolsServer` with endpoints.
-- **api/tokens.py**: Contains the asynchronous calls to TapTools token-related endpoints (like `/token/mcap`, `/token/holders`, etc.).
-- **api/nfts.py**: NFT-related endpoints (like `/nft/collection/stats`, `/nft/collection/trades`, etc.).
-- **models/**: Pydantic models to structure request/response data (optional usage).
-- **test_connection.py**: Quick script to test the server using a local MCP client.
+- **server.py**: Core server logic, sets up the `TapToolsServer` with endpoints and registers each tool.
+- **api/**:
+  - `tokens.py`: Token-related endpoints (market cap, holders, price data, trades).
+  - `nfts.py`: NFT-related endpoints (collections, stats, listings, trades).
+  - `market.py`: Market data endpoints (aggregated stats, active addresses, volume).
+  - `integration.py`: Integration endpoints (asset, block, events, pair, exchange).
+  - `onchain.py`: Onchain data endpoints (asset supply, address UTxOs, transaction details).
+  - `wallet.py`: Wallet endpoints (portfolio positions, trades, historical value).
+- **models/**: Pydantic models specifying request/response schemas for each endpoint (tokens, NFTs, market, etc.).
+- **utils/**: Utility modules (custom exceptions, error handling).
+- **test_connection.py**: A script to test the server using a local MCP client session.
+- **tests/**: Comprehensive test suite (Pytest), including unit and integration tests for each API module and the server.
 
 ## Flow
 
-1. **LLM** calls a tool like `get_token_info`.
-2. **MCP** receives the request and routes it to the server.
-3. **TapToolsServer** calls into the relevant API method (e.g., `TokensAPI.get_mcap`).
-4. The server returns JSON response data or an error message.
-5. The LLM sees the returned data via standard output to the MCP client.
+1. An **LLM** (or other MCP client) calls a tool, e.g. `get_token_mcap`.
+2. **MCP** routes the call to the server with JSON parameters.
+3. **TapToolsServer** delegates to the relevant API method (e.g., `TokensAPI.get_token_mcap`).
+4. The API method issues an HTTP request to TapTools with the provided parameters, returning JSON data.
+5. The server returns the data to the LLM through MCP in JSON format.
 
 ## Error Handling
 
-- If authentication fails, an MCP error is raised with a code like `AUTHENTICATION_ERROR`.
-- If any HTTP request returns a 404 or invalid data, an MCP error is raised with `INVALID_PARAMETERS` or `API_ERROR`.
-- Retries for certain HTTP errors can be configured using a decorator.
+- All internal HTTPX errors or TapTools API issues raise custom `TapToolsError`, which is converted to an `McpError` with appropriate codes (e.g., authentication, rate limits, invalid parameters).
+- Tools must pass valid JSON payloads matching the Pydantic models; otherwise `McpError` is raised for invalid parameters.
 
-## Next Steps
+## Additional Notes
 
-- Add more tools for different TapTools endpoints (NFT, market stats, trades).
-- Expand test coverage with integration tests that call real TapTools endpoints (requires a valid key with sufficient plan).
-- Deploy on a cloud service for easy LLM consumption.
+- For advanced usage or custom expansions, you can define new endpoints in `api/` and create corresponding Pydantic models in `models/`.
+- All network calls are asynchronous; concurrency is handled by `asyncio`.

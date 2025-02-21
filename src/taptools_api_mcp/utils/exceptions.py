@@ -2,7 +2,9 @@
 Custom exceptions for TapTools operations.
 """
 from enum import Enum
-from typing import Optional
+import json
+from typing import Optional, Dict, Any
+from datetime import datetime, timedelta
 
 class ErrorCode:
     """Error codes for TapTools MCP server."""
@@ -15,6 +17,9 @@ class ErrorCode:
     VALIDATION_ERROR = -32007     # Input validation error
     TIMEOUT_ERROR = -32008        # Request timeout
     PARSE_ERROR = -32009          # Response parsing error
+    SERVER_ERROR = -32010         # Server-side error
+    BAD_GATEWAY = -32011         # Bad gateway error
+    SERVICE_UNAVAILABLE = -32012  # Service temporarily unavailable
 
 class ErrorType(Enum):
     """Types of TapTools errors."""
@@ -26,6 +31,9 @@ class ErrorType(Enum):
     TIMEOUT = "timeout"
     PARSE = "parse"
     API = "api"
+    SERVER = "server"
+    BAD_GATEWAY = "bad_gateway"
+    SERVICE_UNAVAILABLE = "service_unavailable"
     UNKNOWN = "unknown"
 
 class TapToolsError(Exception):
@@ -37,49 +45,123 @@ class TapToolsError(Exception):
         error_type: Type of error from ErrorType enum
         status_code: HTTP status code if applicable
         raw_error: Original error/exception if available
+        retry_after: Optional timestamp when rate-limited requests can resume
+        error_details: Additional error details from the API response
     """
     def __init__(
         self, 
         message: str,
         error_type: ErrorType = ErrorType.UNKNOWN,
         status_code: Optional[int] = None,
-        raw_error: Optional[Exception] = None
+        raw_error: Optional[Exception] = None,
+        retry_after: Optional[datetime] = None,
+        error_details: Optional[Dict[str, Any]] = None
     ):
         super().__init__(message)
         self.message = message
         self.error_type = error_type
         self.status_code = status_code
         self.raw_error = raw_error
+        self.retry_after = retry_after
+        self.error_details = error_details or {}
 
     @classmethod
     def from_http_error(cls, error, message: Optional[str] = None):
-        """Create TapToolsError from an HTTP error."""
+        """
+        Create TapToolsError from an HTTP error with enhanced error details.
+        
+        Args:
+            error: The HTTP error
+            message: Optional override message
+            
+        Returns:
+            TapToolsError instance with detailed error information
+        """
         status_code = getattr(error.response, 'status_code', None)
         error_type = ErrorType.UNKNOWN
+        error_details = {}
+        retry_after = None
+        
+        # Extract retry-after header for rate limits
+        if status_code == 429:
+            retry_after_header = error.response.headers.get('Retry-After')
+            if retry_after_header:
+                try:
+                    if retry_after_header.isdigit():
+                        # If Retry-After is in seconds
+                        retry_after = datetime.now() + timedelta(seconds=int(retry_after_header))
+                    else:
+                        # If Retry-After is an HTTP date
+                        retry_after = datetime.strptime(retry_after_header, '%a, %d %b %Y %H:%M:%S GMT')
+                except (ValueError, TypeError):
+                    pass
+
+        # Try to extract error details from response JSON
+        try:
+            error_data = error.response.json()
+            error_details = error_data
+            api_message = error_data.get('message')
+            api_error = error_data.get('error')
+            if api_message and api_error:
+                message = f"{api_error}: {api_message}"
+        except (json.JSONDecodeError, AttributeError):
+            # Use raw response text if JSON parsing fails
+            if hasattr(error.response, 'text') and error.response.text:
+                message = error.response.text
+            elif not message:
+                message = str(error)
         
         if status_code:
             if status_code == 400:
                 error_type = ErrorType.VALIDATION
+                if not message:
+                    message = "Invalid request parameters"
             elif status_code in (401, 403):
                 error_type = ErrorType.AUTHENTICATION
+                if not message:
+                    message = "Authentication failed or insufficient permissions"
             elif status_code == 404:
                 error_type = ErrorType.NOT_FOUND
+                if not message:
+                    message = "Requested resource not found"
             elif status_code == 408:
                 error_type = ErrorType.TIMEOUT
+                if not message:
+                    message = "Request timed out"
             elif status_code == 429:
                 error_type = ErrorType.RATE_LIMIT
+                if not message:
+                    message = "Rate limit exceeded"
+                    if retry_after:
+                        message += f" (retry after {retry_after.strftime('%Y-%m-%d %H:%M:%S')})"
+            elif status_code == 502:
+                error_type = ErrorType.BAD_GATEWAY
+                if not message:
+                    message = "Bad gateway error"
+            elif status_code == 503:
+                error_type = ErrorType.SERVICE_UNAVAILABLE
+                if not message:
+                    message = "Service temporarily unavailable"
             elif status_code >= 400 and status_code < 500:
                 error_type = ErrorType.VALIDATION
+                if not message:
+                    message = f"Client error: HTTP {status_code}"
             elif status_code >= 500:
-                error_type = ErrorType.API
+                error_type = ErrorType.SERVER
+                if not message:
+                    message = f"Server error: HTTP {status_code}"
             else:
                 error_type = ErrorType.UNKNOWN
+                if not message:
+                    message = f"Unknown error: HTTP {status_code}"
 
         return cls(
             message=message or str(error),
             error_type=error_type,
             status_code=status_code,
-            raw_error=error
+            raw_error=error,
+            retry_after=retry_after,
+            error_details=error_details
         )
 
     def to_mcp_error(self):
@@ -100,5 +182,22 @@ class TapToolsError(Exception):
             error_code = ErrorCode.TIMEOUT_ERROR
         elif self.error_type == ErrorType.PARSE:
             error_code = ErrorCode.PARSE_ERROR
+        elif self.error_type == ErrorType.SERVER:
+            error_code = ErrorCode.SERVER_ERROR
+        elif self.error_type == ErrorType.BAD_GATEWAY:
+            error_code = ErrorCode.BAD_GATEWAY
+        elif self.error_type == ErrorType.SERVICE_UNAVAILABLE:
+            error_code = ErrorCode.SERVICE_UNAVAILABLE
 
-        return error_code, self.message
+        message = self.message
+        if self.error_details:
+            # Add any additional error details if available
+            details = []
+            if 'error' in self.error_details and self.error_details['error'] != message:
+                details.append(self.error_details['error'])
+            if 'status' in self.error_details:
+                details.append(f"Status: {self.error_details['status']}")
+            if details:
+                message = f"{message} ({'; '.join(details)})"
+
+        return error_code, message

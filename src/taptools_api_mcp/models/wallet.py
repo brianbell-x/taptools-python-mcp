@@ -6,7 +6,7 @@ from datetime import datetime
 class WalletPortfolioPositionsRequest(BaseModel):
     address: str = Field(..., description="Wallet address")
 
-class WalletPortfolioPositionsResponse(BaseModel):
+class WalletPortfolioPositions(BaseModel):
     ada_balance: float = Field(..., description="ADA balance")
     ada_value: float = Field(..., description="Total value in ADA")
     liquid_value: float = Field(..., description="Total liquid value")
@@ -15,6 +15,9 @@ class WalletPortfolioPositionsResponse(BaseModel):
     positions_ft: List[Dict] = Field(..., description="Fungible token positions")
     positions_lp: List[Dict] = Field(..., description="Liquidity pool positions")
     positions_nft: List[Dict] = Field(..., description="NFT positions")
+
+class WalletPortfolioPositionsResponse(BaseModel):
+    __root__: WalletPortfolioPositions = Field(..., description="Current wallet positions")
 
 # Wallet Token Trades Models
 class WalletTokenTradesRequest(BaseModel):
@@ -32,7 +35,8 @@ class WalletTokenTrade(BaseModel):
     token_b_amount: float = Field(..., description="Amount of second token")
     token_b_name: str = Field(..., description="Name of second token")
 
-# Response is List[WalletTokenTrade]
+class WalletTokenTradesResponse(BaseModel):
+    __root__: List[WalletTokenTrade] = Field(..., description="Token trade history for wallet")
 
 # Wallet Value Trended Models
 class WalletValueTrendedRequest(BaseModel):
@@ -44,4 +48,5 @@ class WalletValueTrend(BaseModel):
     time: int = Field(..., description="Unix timestamp")
     value: float = Field(..., description="Portfolio value")
 
-# Response is List[WalletValueTrend]
+class WalletValueTrendedResponse(BaseModel):
+    __root__: List[WalletValueTrend] = Field(..., description="Historical wallet value in 4hr intervals")
