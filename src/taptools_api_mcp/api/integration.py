@@ -5,6 +5,14 @@ import logging
 import httpx
 from typing import Dict, Any, Optional
 
+from ..models.integration import (
+    IntegrationAssetRequest, IntegrationAssetResponse,
+    IntegrationBlockRequest, IntegrationBlockResponse,
+    IntegrationEventsRequest, IntegrationEventsResponse,
+    IntegrationExchangeRequest, IntegrationExchangeResponse,
+    IntegrationLatestBlockResponse,
+    IntegrationPairRequest, IntegrationPairResponse
+)
 from ..utils.exceptions import TapToolsError, ErrorType
 
 logger = logging.getLogger("taptools_mcp")
@@ -48,69 +56,67 @@ class IntegrationAPI:
                 error_type=ErrorType.UNKNOWN
             )
 
-    async def get_asset(self, id: str) -> Dict[str, Any]:
+    async def get_asset(self, request: IntegrationAssetRequest) -> IntegrationAssetResponse:
         """
         GET /integration/asset
         
         Return details of a token by ID.
         """
         url = "/integration/asset"
-        params = {"id": id}
-        return await self._make_request("get", url, params=params)
+        params = request.model_dump(exclude_none=True)
+        response_data = await self._make_request("get", url, params=params)
+        return IntegrationAssetResponse(asset=response_data)
 
-    async def get_block(self, number: Optional[int] = None, timestamp: Optional[int] = None) -> Dict[str, Any]:
+    async def get_block(self, request: IntegrationBlockRequest) -> IntegrationBlockResponse:
         """
         GET /integration/block
         
         Return a block by number or timestamp.
         """
         url = "/integration/block"
-        params = {}
-        if number is not None:
-            params["number"] = number
-        if timestamp is not None:
-            params["timestamp"] = timestamp
-        return await self._make_request("get", url, params=params)
+        params = request.model_dump(exclude_none=True)
+        response_data = await self._make_request("get", url, params=params)
+        return IntegrationBlockResponse(block=response_data)
 
-    async def get_events(self, from_block: int, to_block: int, limit: int = 1000) -> Dict[str, Any]:
+    async def get_events(self, request: IntegrationEventsRequest) -> IntegrationEventsResponse:
         """
         GET /integration/events
         
         List events within a block range.
         """
         url = "/integration/events"
-        params = {
-            "fromBlock": from_block,
-            "toBlock": to_block,
-            "limit": limit
-        }
-        return await self._make_request("get", url, params=params)
+        params = request.model_dump(exclude_none=True)
+        response_data = await self._make_request("get", url, params=params)
+        return IntegrationEventsResponse(events=response_data)
 
-    async def get_exchange(self, id: str) -> Dict[str, Any]:
+    async def get_exchange(self, request: IntegrationExchangeRequest) -> IntegrationExchangeResponse:
         """
         GET /integration/exchange
         
         Return DEX details by factory address/ID.
         """
         url = "/integration/exchange"
-        params = {"id": id}
-        return await self._make_request("get", url, params=params)
+        params = request.model_dump(exclude_none=True)
+        response_data = await self._make_request("get", url, params=params)
+        return IntegrationExchangeResponse(exchange=response_data)
 
-    async def get_latest_block(self) -> Dict[str, Any]:
+    async def get_latest_block(self) -> IntegrationLatestBlockResponse:
         """
         GET /integration/latest-block
         
         Get the latest processed block info.
         """
         url = "/integration/latest-block"
-        return await self._make_request("get", url)
+        response_data = await self._make_request("get", url)
+        return IntegrationLatestBlockResponse(block=response_data)
 
-    async def get_pair(self, id: str) -> Dict[str, Any]:
+    async def get_pair(self, request: IntegrationPairRequest) -> IntegrationPairResponse:
         """
         GET /integration/pair
         
         Return pair/pool details by address.
         """
         url = "/integration/pair"
-        params = {"id": id}
-        return await self._make_request("get", url, params=params)
+        params = request.model_dump(exclude_none=True)
+        response_data = await self._make_request("get", url, params=params)
+        return IntegrationPairResponse(pair=response_data)

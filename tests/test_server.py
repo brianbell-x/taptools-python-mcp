@@ -3,7 +3,6 @@ Tests for the TapTools MCP server implementation.
 """
 import os
 import pytest
-import pytest_asyncio
 from unittest.mock import patch, AsyncMock, MagicMock
 import httpx
 from taptools_api_mcp.server import TapToolsServer, ServerConfig
@@ -150,17 +149,180 @@ class TestTapToolsServer:
             await server.app.call_tool("verify_connection", {})
         assert "Connection error" in str(exc.value)
 
-    async def test_get_token_price_tool(self, config, mock_client):
-        """Test get_token_price tool success case."""
+    # Token Tools Tests
+    async def test_get_token_mcap_tool(self, config, mock_client):
+        """Test get_token_mcap tool success case."""
         server = TapToolsServer(config)
         server.client = mock_client
         mock_resp = MagicMock(spec=httpx.Response)
         mock_resp.status_code = 200
-        mock_resp.json.return_value = {"someTokenUnit": 5.0}
-        mock_client.post.return_value = mock_resp
+        mock_resp.json.return_value = {
+            "circ_supply": 1000000,
+            "fdv": 2000000,
+            "mcap": 1500000,
+            "price": 1.5,
+            "ticker": "TEST",
+            "total_supply": 2000000
+        }
+        mock_client.get.return_value = mock_resp
 
-        result = await server.app.call_tool("get_token_price", {"unit": "someTokenUnit"})
-        assert '"someTokenUnit": 5.0' in result[0].text
+        result = await server.app.call_tool("get_token_mcap", {"unit": "test_token"})
+        assert "mcap" in result[0].text
+        assert "1500000" in result[0].text
+
+    async def test_get_token_holders_tool(self, config, mock_client):
+        """Test get_token_holders tool success case."""
+        server = TapToolsServer(config)
+        server.client = mock_client
+        mock_resp = MagicMock(spec=httpx.Response)
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {"holders": 1000}
+        mock_client.get.return_value = mock_resp
+
+        result = await server.app.call_tool("get_token_holders", {"unit": "test_token"})
+        assert "holders" in result[0].text
+        assert "1000" in result[0].text
+
+    async def test_get_token_holders_top_tool(self, config, mock_client):
+        """Test get_token_holders_top tool success case."""
+        server = TapToolsServer(config)
+        server.client = mock_client
+        mock_resp = MagicMock(spec=httpx.Response)
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {
+            "holders": [
+                {"address": "addr1", "balance": 1000},
+                {"address": "addr2", "balance": 500}
+            ]
+        }
+        mock_client.get.return_value = mock_resp
+
+        result = await server.app.call_tool("get_token_holders_top", {
+            "unit": "test_token",
+            "page": 1,
+            "per_page": 10
+        })
+        assert "holders" in result[0].text
+        assert "addr1" in result[0].text
+
+    # NFT Tools Tests
+    async def test_get_nft_asset_sales_tool(self, config, mock_client):
+        """Test get_nft_asset_sales tool success case."""
+        server = TapToolsServer(config)
+        server.client = mock_client
+        mock_resp = MagicMock(spec=httpx.Response)
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = [{
+            "buyer_stake_address": "stake1test123buyer",
+            "price": 100.5,
+            "seller_stake_address": "stake1test123seller",
+            "time": 1234567890
+        }]
+        mock_client.get.return_value = mock_resp
+
+        result = await server.app.call_tool("get_nft_asset_sales", {
+            "policy": "policy123",
+            "name": "Test NFT"
+        })
+        assert "buyer_stake_address" in result[0].text
+        assert "100.5" in result[0].text
+
+    async def test_get_nft_collection_stats_tool(self, config, mock_client):
+        """Test get_nft_collection_stats tool success case."""
+        server = TapToolsServer(config)
+        server.client = mock_client
+        mock_resp = MagicMock(spec=httpx.Response)
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {
+            "listings": 100,
+            "owners": 50,
+            "price": 150.5,
+            "sales": 75,
+            "supply": 1000,
+            "top_offer": 200.0,
+            "volume": 15000.0
+        }
+        mock_client.get.return_value = mock_resp
+
+        result = await server.app.call_tool("get_nft_collection_stats", {
+            "policy": "policy123"
+        })
+        assert "listings" in result[0].text
+        assert "15000.0" in result[0].text
+
+    # Market Tools Tests
+    async def test_get_market_stats_tool(self, config, mock_client):
+        """Test get_market_stats tool success case."""
+        server = TapToolsServer(config)
+        server.client = mock_client
+        mock_resp = MagicMock(spec=httpx.Response)
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {
+            "active_addresses": 1000,
+            "dex_volume": 500000.5
+        }
+        mock_client.get.return_value = mock_resp
+
+        result = await server.app.call_tool("get_market_stats", {"quote": "ADA"})
+        assert "active_addresses" in result[0].text
+        assert "500000.5" in result[0].text
+
+    # Integration Tools Tests
+    async def test_get_integration_asset_tool(self, config, mock_client):
+        """Test get_integration_asset tool success case."""
+        server = TapToolsServer(config)
+        server.client = mock_client
+        mock_resp = MagicMock(spec=httpx.Response)
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {
+            "circulating_supply": 1000000,
+            "id": "asset123",
+            "name": "Test Asset",
+            "symbol": "TEST",
+            "total_supply": 2000000
+        }
+        mock_client.get.return_value = mock_resp
+
+        result = await server.app.call_tool("get_integration_asset", {"id": "asset123"})
+        assert "circulating_supply" in result[0].text
+        assert "Test Asset" in result[0].text
+
+    # Onchain Tools Tests
+    async def test_get_asset_supply_tool(self, config, mock_client):
+        """Test get_asset_supply tool success case."""
+        server = TapToolsServer(config)
+        server.client = mock_client
+        mock_resp = MagicMock(spec=httpx.Response)
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {"supply": 1000000}
+        mock_client.get.return_value = mock_resp
+
+        result = await server.app.call_tool("get_asset_supply", {"unit": "test_token"})
+        assert "supply" in result[0].text
+        assert "1000000" in result[0].text
+
+    # Wallet Tools Tests
+    async def test_get_wallet_portfolio_tool(self, config, mock_client):
+        """Test get_wallet_portfolio tool success case."""
+        server = TapToolsServer(config)
+        server.client = mock_client
+        mock_resp = MagicMock(spec=httpx.Response)
+        mock_resp.status_code = 200
+        mock_resp.json.return_value = {
+            "ada_balance": 1000.5,
+            "ada_value": 1500.75,
+            "liquid_value": 2000.25,
+            "num_fts": 5,
+            "num_nfts": 10,
+            "positions_ft": [{"token": "token1", "amount": 100}],
+            "positions_lp": [{"pool": "pool1", "share": 0.1}],
+            "positions_nft": [{"policy": "policy1", "name": "nft1"}]
+        }
+        mock_client.get.return_value = mock_resp
+
+        result = await server.app.call_tool("get_wallet_portfolio", {"address": "addr1test123"})
+        assert "ada_balance" in result[0].text
+        assert "positions_ft" in result[0].text
 
     async def test_invalid_tool_name(self, config):
         """Test handling of invalid tool name."""
@@ -187,3 +349,178 @@ class TestTapToolsServer:
         await server.close()
         assert server.client is None
         mock_client.aclose.assert_called_once()
+
+    # Tool Error Cases
+    async def test_get_token_mcap_tool_error(self, config, mock_client):
+        """Test get_token_mcap tool error case."""
+        server = TapToolsServer(config)
+        server.client = mock_client
+        mock_resp = MagicMock(spec=httpx.Response)
+        mock_resp.status_code = 400
+        mock_resp.raise_for_status.side_effect = httpx.HTTPStatusError(
+            "Bad Request",
+            request=MagicMock(),
+            response=mock_resp
+        )
+        mock_client.get.return_value = mock_resp
+
+        with pytest.raises(McpError) as exc:
+            await server.app.call_tool("get_token_mcap", {"unit": "invalid_token"})
+        assert "400" in str(exc.value)
+
+    async def test_get_token_holders_tool_error(self, config, mock_client):
+        """Test get_token_holders tool error case."""
+        server = TapToolsServer(config)
+        server.client = mock_client
+        mock_resp = MagicMock(spec=httpx.Response)
+        mock_resp.status_code = 404
+        mock_resp.raise_for_status.side_effect = httpx.HTTPStatusError(
+            "Not Found",
+            request=MagicMock(),
+            response=mock_resp
+        )
+        mock_client.get.return_value = mock_resp
+
+        with pytest.raises(McpError) as exc:
+            await server.app.call_tool("get_token_holders", {"unit": "nonexistent_token"})
+        assert "404" in str(exc.value)
+
+    async def test_get_nft_asset_sales_tool_error(self, config, mock_client):
+        """Test get_nft_asset_sales tool error case."""
+        server = TapToolsServer(config)
+        server.client = mock_client
+        mock_resp = MagicMock(spec=httpx.Response)
+        mock_resp.status_code = 400
+        mock_resp.raise_for_status.side_effect = httpx.HTTPStatusError(
+            "Bad Request",
+            request=MagicMock(),
+            response=mock_resp
+        )
+        mock_client.get.return_value = mock_resp
+
+        with pytest.raises(McpError) as exc:
+            await server.app.call_tool("get_nft_asset_sales", {
+                "policy": "invalid_policy",
+                "name": "Test NFT"
+            })
+        assert "400" in str(exc.value)
+
+    async def test_get_nft_collection_stats_tool_error(self, config, mock_client):
+        """Test get_nft_collection_stats tool error case."""
+        server = TapToolsServer(config)
+        server.client = mock_client
+        mock_resp = MagicMock(spec=httpx.Response)
+        mock_resp.status_code = 404
+        mock_resp.raise_for_status.side_effect = httpx.HTTPStatusError(
+            "Not Found",
+            request=MagicMock(),
+            response=mock_resp
+        )
+        mock_client.get.return_value = mock_resp
+
+        with pytest.raises(McpError) as exc:
+            await server.app.call_tool("get_nft_collection_stats", {
+                "policy": "nonexistent_policy"
+            })
+        assert "404" in str(exc.value)
+
+    async def test_get_market_stats_tool_error(self, config, mock_client):
+        """Test get_market_stats tool error case."""
+        server = TapToolsServer(config)
+        server.client = mock_client
+        mock_resp = MagicMock(spec=httpx.Response)
+        mock_resp.status_code = 500
+        mock_resp.raise_for_status.side_effect = httpx.HTTPStatusError(
+            "Internal Server Error",
+            request=MagicMock(),
+            response=mock_resp
+        )
+        mock_client.get.return_value = mock_resp
+
+        with pytest.raises(McpError) as exc:
+            await server.app.call_tool("get_market_stats", {"quote": "INVALID"})
+        assert "500" in str(exc.value)
+
+    async def test_get_integration_asset_tool_error(self, config, mock_client):
+        """Test get_integration_asset tool error case."""
+        server = TapToolsServer(config)
+        server.client = mock_client
+        mock_resp = MagicMock(spec=httpx.Response)
+        mock_resp.status_code = 404
+        mock_resp.raise_for_status.side_effect = httpx.HTTPStatusError(
+            "Not Found",
+            request=MagicMock(),
+            response=mock_resp
+        )
+        mock_client.get.return_value = mock_resp
+
+        with pytest.raises(McpError) as exc:
+            await server.app.call_tool("get_integration_asset", {"id": "nonexistent_asset"})
+        assert "404" in str(exc.value)
+
+    async def test_get_asset_supply_tool_error(self, config, mock_client):
+        """Test get_asset_supply tool error case."""
+        server = TapToolsServer(config)
+        server.client = mock_client
+        mock_resp = MagicMock(spec=httpx.Response)
+        mock_resp.status_code = 400
+        mock_resp.raise_for_status.side_effect = httpx.HTTPStatusError(
+            "Bad Request",
+            request=MagicMock(),
+            response=mock_resp
+        )
+        mock_client.get.return_value = mock_resp
+
+        with pytest.raises(McpError) as exc:
+            await server.app.call_tool("get_asset_supply", {"unit": "invalid_token"})
+        assert "400" in str(exc.value)
+
+    async def test_get_wallet_portfolio_tool_error(self, config, mock_client):
+        """Test get_wallet_portfolio tool error case."""
+        server = TapToolsServer(config)
+        server.client = mock_client
+        mock_resp = MagicMock(spec=httpx.Response)
+        mock_resp.status_code = 400
+        mock_resp.raise_for_status.side_effect = httpx.HTTPStatusError(
+            "Bad Request",
+            request=MagicMock(),
+            response=mock_resp
+        )
+        mock_client.get.return_value = mock_resp
+
+        with pytest.raises(McpError) as exc:
+            await server.app.call_tool("get_wallet_portfolio", {"address": "invalid_address"})
+        assert "400" in str(exc.value)
+
+    async def test_tool_connection_error(self, config, mock_client):
+        """Test tool connection error handling."""
+        server = TapToolsServer(config)
+        server.client = mock_client
+        mock_client.get.side_effect = httpx.ConnectError("Failed to connect")
+
+        with pytest.raises(McpError) as exc:
+            await server.app.call_tool("get_token_mcap", {"unit": "test_token"})
+        assert "Connection error" in str(exc.value)
+
+    async def test_tool_timeout_error(self, config, mock_client):
+        """Test tool timeout error handling."""
+        server = TapToolsServer(config)
+        server.client = mock_client
+        mock_client.get.side_effect = httpx.TimeoutException("Request timed out")
+
+        with pytest.raises(McpError) as exc:
+            await server.app.call_tool("get_token_mcap", {"unit": "test_token"})
+        assert "Connection error" in str(exc.value)
+
+    async def test_tool_parse_error(self, config, mock_client):
+        """Test tool JSON parse error handling."""
+        server = TapToolsServer(config)
+        server.client = mock_client
+        mock_resp = MagicMock(spec=httpx.Response)
+        mock_resp.status_code = 200
+        mock_resp.json.side_effect = ValueError("Invalid JSON")
+        mock_client.get.return_value = mock_resp
+
+        with pytest.raises(McpError) as exc:
+            await server.app.call_tool("get_token_mcap", {"unit": "test_token"})
+        assert "Failed to parse response" in str(exc.value)

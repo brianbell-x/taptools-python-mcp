@@ -5,6 +5,25 @@ import logging
 import httpx
 from typing import Dict, Any, List, Optional
 
+from ..models.tokens import (
+    TokenMcapRequest, TokenMcapResponse,
+    TokenHoldersRequest, TokenHoldersResponse,
+    TokenTopHoldersRequest, TokenTopHoldersResponse,
+    TokenIndicatorsRequest, TokenIndicatorsResponse,
+    TokenLinksRequest, TokenLinksResponse,
+    TokenOHLCVRequest, TokenOHLCVResponse,
+    TokenPoolsRequest, TokenPoolsResponse,
+    TokenPricesRequest, TokenPricesResponse,
+    TokenPriceChangesRequest, TokenPriceChangesResponse,
+    TokenQuoteRequest, TokenQuoteResponse, TokenQuoteAvailableResponse,
+    TokenTopLiquidityRequest, TokenTopLiquidityResponse,
+    TokenTradingStatsRequest, TokenTradingStatsResponse,
+    TokenTopMcapRequest, TokenTopMcapResponse,
+    TokenTopVolumeRequest, TokenTopVolumeResponse,
+    TokenDebtLoansRequest, TokenDebtLoansResponse,
+    TokenDebtOffersRequest, TokenDebtOffersResponse,
+    TokenTradesRequest, TokenTradesResponse
+)
 from ..utils.exceptions import TapToolsError, ErrorType
 
 logger = logging.getLogger("taptools_mcp")
@@ -48,7 +67,7 @@ class TokensAPI:
                 error_type=ErrorType.UNKNOWN
             )
 
-    async def get_token_mcap(self, unit: str) -> Dict[str, Any]:
+    async def get_token_mcap(self, request: TokenMcapRequest) -> TokenMcapResponse:
         """
         TapTools endpoint:
         GET /token/mcap
@@ -56,10 +75,11 @@ class TokensAPI:
         Get supply + market cap of a token (circulating from external repo).
         """
         url = "/token/mcap"
-        params = {"unit": unit}
-        return await self._make_request("get", url, params=params)
+        params = request.model_dump(exclude_none=True)
+        response_data = await self._make_request("get", url, params=params)
+        return TokenMcapResponse(__root__=response_data)
 
-    async def get_token_holders(self, unit: str) -> Dict[str, Any]:
+    async def get_token_holders(self, request: TokenHoldersRequest) -> TokenHoldersResponse:
         """
         TapTools endpoint:
         GET /token/holders
@@ -67,10 +87,11 @@ class TokensAPI:
         Get total number of holders (aggregates addresses with same stake).
         """
         url = "/token/holders"
-        params = {"unit": unit}
-        return await self._make_request("get", url, params=params)
+        params = request.model_dump(exclude_none=True)
+        response_data = await self._make_request("get", url, params=params)
+        return TokenHoldersResponse(**response_data)
 
-    async def get_token_holders_top(self, unit: str, page: int = 1, perPage: int = 20) -> Dict[str, Any]:
+    async def get_token_holders_top(self, request: TokenTopHoldersRequest) -> TokenTopHoldersResponse:
         """
         TapTools endpoint:
         GET /token/holders/top
@@ -78,14 +99,11 @@ class TokensAPI:
         Read top holders of a token.
         """
         url = "/token/holders/top"
-        params = {
-            "unit": unit,
-            "page": page,
-            "perPage": perPage
-        }
-        return await self._make_request("get", url, params=params)
+        params = request.model_dump(exclude_none=True)
+        response_data = await self._make_request("get", url, params=params)
+        return TokenTopHoldersResponse(__root__=response_data)
 
-    async def get_token_indicators(self, unit: str, interval: str, items: int, indicator: str, quote: str, **kwargs) -> Dict[str, Any]:
+    async def get_token_indicators(self, request: TokenIndicatorsRequest) -> TokenIndicatorsResponse:
         """
         TapTools endpoint:
         GET /token/indicators
@@ -93,17 +111,11 @@ class TokensAPI:
         Create indicator values (EMA, RSI, MACD) for a token's price data.
         """
         url = "/token/indicators"
-        params = {
-            "unit": unit,
-            "interval": interval,
-            "items": items,
-            "indicator": indicator,
-            "quote": quote,
-            **kwargs  # Additional indicator-specific parameters
-        }
-        return await self._make_request("get", url, params=params)
+        params = request.model_dump(exclude_none=True)
+        response_data = await self._make_request("get", url, params=params)
+        return TokenIndicatorsResponse(__root__=response_data)
 
-    async def get_token_links(self, unit: str) -> Dict[str, Any]:
+    async def get_token_links(self, request: TokenLinksRequest) -> TokenLinksResponse:
         """
         TapTools endpoint:
         GET /token/links
@@ -111,10 +123,11 @@ class TokensAPI:
         Get a token's social/contact links.
         """
         url = "/token/links"
-        params = {"unit": unit}
-        return await self._make_request("get", url, params=params)
+        params = request.model_dump(exclude_none=True)
+        response_data = await self._make_request("get", url, params=params)
+        return TokenLinksResponse(**response_data)
 
-    async def get_token_ohlcv(self, unit: str, interval: str, numIntervals: int) -> Dict[str, Any]:
+    async def get_token_ohlcv(self, request: TokenOHLCVRequest) -> TokenOHLCVResponse:
         """
         TapTools endpoint:
         GET /token/ohlcv
@@ -122,14 +135,11 @@ class TokensAPI:
         Get token OHLCV (aggregated or by onchain ID).
         """
         url = "/token/ohlcv"
-        params = {
-            "unit": unit,
-            "interval": interval,
-            "numIntervals": numIntervals
-        }
-        return await self._make_request("get", url, params=params)
+        params = request.model_dump(exclude_none=True)
+        response_data = await self._make_request("get", url, params=params)
+        return TokenOHLCVResponse(__root__=response_data)
 
-    async def get_token_pools(self, unit: str, adaOnly: int = 0) -> Dict[str, Any]:
+    async def get_token_pools(self, request: TokenPoolsRequest) -> TokenPoolsResponse:
         """
         TapTools endpoint:
         GET /token/pools
@@ -137,13 +147,11 @@ class TokensAPI:
         Get active liquidity pools for a token.
         """
         url = "/token/pools"
-        params = {
-            "unit": unit,
-            "adaOnly": adaOnly
-        }
-        return await self._make_request("get", url, params=params)
+        params = request.model_dump(exclude_none=True)
+        response_data = await self._make_request("get", url, params=params)
+        return TokenPoolsResponse(__root__=response_data)
 
-    async def post_token_prices(self, units: List[str]) -> Dict[str, Any]:
+    async def post_token_prices(self, request: TokenPricesRequest) -> TokenPricesResponse:
         """
         TapTools endpoint:
         POST /token/prices
@@ -151,9 +159,10 @@ class TokensAPI:
         Move an array of token units to get aggregated prices. Max batch size: 100.
         """
         url = "/token/prices"
-        return await self._make_request("post", url, json=units)
+        response_data = await self._make_request("post", url, json=request.units)
+        return TokenPricesResponse(__root__=response_data)
 
-    async def get_token_price_changes(self, unit: str, timeframes: str) -> Dict[str, Any]:
+    async def get_token_price_percent_changes(self, request: TokenPriceChangesRequest) -> TokenPriceChangesResponse:
         """
         TapTools endpoint:
         GET /token/prices/chg
@@ -161,23 +170,11 @@ class TokensAPI:
         Get token price % changes over multiple timeframes.
         """
         url = "/token/prices/chg"
-        params = {
-            "unit": unit,
-            "timeframes": timeframes
-        }
-        return await self._make_request("get", url, params=params)
+        params = request.model_dump(exclude_none=True)
+        response_data = await self._make_request("get", url, params=params)
+        return TokenPriceChangesResponse(__root__=response_data)
 
-    async def get_token_trades(
-        self, 
-        timeframe: str = "30d", 
-        sort_by: str = "amount", 
-        order: str = "desc", 
-        unit: str = "", 
-        min_amount: Optional[int] = None, 
-        from_ts: Optional[int] = None, 
-        page: int = 1, 
-        per_page: int = 100
-    ) -> Dict[str, Any]:
+    async def get_token_trades(self, request: TokenTradesRequest) -> TokenTradesResponse:
         """
         TapTools endpoint:
         GET /token/trades
@@ -185,23 +182,11 @@ class TokensAPI:
         Get token trades across DEXes.
         """
         url = "/token/trades"
-        params = {
-            "timeframe": timeframe,
-            "sortBy": sort_by,
-            "order": order,
-            "page": page,
-            "perPage": per_page
-        }
-        if unit:
-            params["unit"] = unit
-        if min_amount is not None:
-            params["minAmount"] = min_amount
-        if from_ts is not None:
-            params["from"] = from_ts
-            
-        return await self._make_request("get", url, params=params)
+        params = request.model_dump(exclude_none=True)
+        response_data = await self._make_request("get", url, params=params)
+        return TokenTradesResponse(__root__=response_data)
 
-    async def get_token_trading_stats(self, unit: str, timeframe: str = "24h") -> Dict[str, Any]:
+    async def get_token_trade_stats(self, request: TokenTradingStatsRequest) -> TokenTradingStatsResponse:
         """
         TapTools endpoint:
         GET /token/trading/stats
@@ -209,21 +194,11 @@ class TokensAPI:
         Get aggregated trading stats for a token over timeframe.
         """
         url = "/token/trading/stats"
-        params = {
-            "unit": unit,
-            "timeframe": timeframe
-        }
-        return await self._make_request("get", url, params=params)
+        params = request.model_dump(exclude_none=True)
+        response_data = await self._make_request("get", url, params=params)
+        return TokenTradingStatsResponse(__root__=response_data)
 
-    async def get_token_debt_loans(
-        self, 
-        unit: str, 
-        include: str = "collateral,debt", 
-        sort_by: str = "time", 
-        order: str = "desc", 
-        page: int = 1, 
-        per_page: int = 100
-    ) -> Dict[str, Any]:
+    async def get_token_active_loans(self, request: TokenDebtLoansRequest) -> TokenDebtLoansResponse:
         """
         TapTools endpoint:
         GET /token/debt/loans
@@ -231,25 +206,11 @@ class TokensAPI:
         Update active P2P loans for a given token (Lenfi, Levvy).
         """
         url = "/token/debt/loans"
-        params = {
-            "unit": unit,
-            "include": include,
-            "sortBy": sort_by,
-            "order": order,
-            "page": page,
-            "perPage": per_page
-        }
-        return await self._make_request("get", url, params=params)
+        params = request.model_dump(exclude_none=True)
+        response_data = await self._make_request("get", url, params=params)
+        return TokenDebtLoansResponse(__root__=response_data)
 
-    async def get_token_debt_offers(
-        self, 
-        unit: str, 
-        include: str = "collateral,debt", 
-        sort_by: str = "time", 
-        order: str = "desc", 
-        page: int = 1, 
-        per_page: int = 100
-    ) -> Dict[str, Any]:
+    async def get_token_loan_offers(self, request: TokenDebtOffersRequest) -> TokenDebtOffersResponse:
         """
         TapTools endpoint:
         GET /token/debt/offers
@@ -257,17 +218,11 @@ class TokensAPI:
         Get active P2P loan offers (Lenfi, Levvy).
         """
         url = "/token/debt/offers"
-        params = {
-            "unit": unit,
-            "include": include,
-            "sortBy": sort_by,
-            "order": order,
-            "page": page,
-            "perPage": per_page
-        }
-        return await self._make_request("get", url, params=params)
+        params = request.model_dump(exclude_none=True)
+        response_data = await self._make_request("get", url, params=params)
+        return TokenDebtOffersResponse(__root__=response_data)
 
-    async def get_top_tokens_by_liquidity(self, page: int = 1, per_page: int = 10) -> Dict[str, Any]:
+    async def get_token_top_tokens_by_liquidity(self, request: TokenTopLiquidityRequest) -> TokenTopLiquidityResponse:
         """
         TapTools endpoint:
         GET /token/top/liquidity
@@ -275,13 +230,11 @@ class TokensAPI:
         Get tokens ranked by total DEX liquidity.
         """
         url = "/token/top/liquidity"
-        params = {
-            "page": page,
-            "perPage": per_page
-        }
-        return await self._make_request("get", url, params=params)
+        params = request.model_dump(exclude_none=True)
+        response_data = await self._make_request("get", url, params=params)
+        return TokenTopLiquidityResponse(__root__=response_data)
 
-    async def get_top_tokens_by_mcap(self, type: str, page: int = 1, per_page: int = 20) -> Dict[str, Any]:
+    async def get_token_top_tokens_by_mcap(self, request: TokenTopMcapRequest) -> TokenTopMcapResponse:
         """
         TapTools endpoint:
         GET /token/top/mcap
@@ -289,14 +242,11 @@ class TokensAPI:
         Get tokens with top market cap (excludes deprecated).
         """
         url = "/token/top/mcap"
-        params = {
-            "type": type,
-            "page": page,
-            "perPage": per_page
-        }
-        return await self._make_request("get", url, params=params)
+        params = request.model_dump(exclude_none=True)
+        response_data = await self._make_request("get", url, params=params)
+        return TokenTopMcapResponse(__root__=response_data)
 
-    async def get_top_tokens_by_volume(self, timeframe: str = "24h", page: int = 1, per_page: int = 20) -> Dict[str, Any]:
+    async def get_token_top_tokens_by_volume(self, request: TokenTopVolumeRequest) -> TokenTopVolumeResponse:
         """
         TapTools endpoint:
         GET /token/top/volume
@@ -304,14 +254,11 @@ class TokensAPI:
         Get tokens with top volume for a timeframe.
         """
         url = "/token/top/volume"
-        params = {
-            "timeframe": timeframe,
-            "page": page,
-            "perPage": per_page
-        }
-        return await self._make_request("get", url, params=params)
+        params = request.model_dump(exclude_none=True)
+        response_data = await self._make_request("get", url, params=params)
+        return TokenTopVolumeResponse(__root__=response_data)
 
-    async def get_token_quote(self, quote: str) -> Dict[str, Any]:
+    async def get_quote_price(self, request: TokenQuoteRequest) -> TokenQuoteResponse:
         """
         TapTools endpoint:
         GET /token/quote
@@ -319,10 +266,11 @@ class TokensAPI:
         Get current quote price (e.g. ADA/USD).
         """
         url = "/token/quote"
-        params = {"quote": quote}
-        return await self._make_request("get", url, params=params)
+        params = request.model_dump(exclude_none=True)
+        response_data = await self._make_request("get", url, params=params)
+        return TokenQuoteResponse(**response_data)
 
-    async def get_available_quotes(self) -> Dict[str, Any]:
+    async def list_quote_currencies(self) -> TokenQuoteAvailableResponse:
         """
         TapTools endpoint:
         GET /token/quote/available
@@ -330,9 +278,10 @@ class TokensAPI:
         List available quote currencies.
         """
         url = "/token/quote/available"
-        return await self._make_request("get", url)
+        response_data = await self._make_request("get", url)
+        return TokenQuoteAvailableResponse(__root__=response_data)
 
-    async def get_token_price(self, unit: str) -> Dict[str, Any]:
+    async def get_token_price(self, request: TokenPricesRequest) -> TokenPricesResponse:
         """
         TapTools endpoint:
         POST /token/prices
@@ -340,5 +289,5 @@ class TokensAPI:
         Aggregated price across DEXs for the given token unit.
         """
         url = "/token/prices"
-        body = [unit]
-        return await self._make_request("post", url, json=body)
+        response_data = await self._make_request("post", url, json=request.units)
+        return TokenPricesResponse(__root__=response_data)

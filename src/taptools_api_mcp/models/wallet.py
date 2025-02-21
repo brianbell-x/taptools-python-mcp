@@ -6,7 +6,7 @@ from datetime import datetime
 class WalletPortfolioPositionsRequest(BaseModel):
     address: str = Field(..., description="Wallet address")
 
-class WalletPosition(BaseModel):
+class WalletPortfolioPositionsResponse(BaseModel):
     ada_balance: float = Field(..., description="ADA balance")
     ada_value: float = Field(..., description="Total value in ADA")
     liquid_value: float = Field(..., description="Total liquid value")
@@ -15,9 +15,6 @@ class WalletPosition(BaseModel):
     positions_ft: List[Dict] = Field(..., description="Fungible token positions")
     positions_lp: List[Dict] = Field(..., description="Liquidity pool positions")
     positions_nft: List[Dict] = Field(..., description="NFT positions")
-
-class WalletPortfolioPositionsResponse(BaseModel):
-    portfolio: WalletPosition
 
 # Wallet Token Trades Models
 class WalletTokenTradesRequest(BaseModel):
@@ -35,8 +32,7 @@ class WalletTokenTrade(BaseModel):
     token_b_amount: float = Field(..., description="Amount of second token")
     token_b_name: str = Field(..., description="Name of second token")
 
-class WalletTokenTradesResponse(BaseModel):
-    trades: List[WalletTokenTrade]
+# Response is List[WalletTokenTrade]
 
 # Wallet Value Trended Models
 class WalletValueTrendedRequest(BaseModel):
@@ -48,5 +44,4 @@ class WalletValueTrend(BaseModel):
     time: int = Field(..., description="Unix timestamp")
     value: float = Field(..., description="Portfolio value")
 
-class WalletValueTrendedResponse(BaseModel):
-    trends: List[WalletValueTrend]
+# Response is List[WalletValueTrend]

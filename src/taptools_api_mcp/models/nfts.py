@@ -14,7 +14,7 @@ class NFTSale(BaseModel):
     time: int = Field(..., description="Unix timestamp of the sale")
 
 class NFTAssetSalesResponse(BaseModel):
-    sales: List[NFTSale]
+    __root__: List[NFTSale] = Field(..., description="List of NFT sales")
 
 # NFT Asset Stats Models
 class NFTAssetStatsRequest(BaseModel):
@@ -33,7 +33,7 @@ class NFTAssetStats(BaseModel):
     volume: float = Field(..., description="Total trading volume in ADA")
 
 class NFTAssetStatsResponse(BaseModel):
-    stats: NFTAssetStats
+    __root__: Dict[str, float] = Field(..., description="NFT asset statistics")
 
 # NFT Asset Traits Models
 class NFTAssetTraitsRequest(BaseModel):
@@ -46,7 +46,7 @@ class NFTAssetTraits(BaseModel):
     traits: List[Dict] = Field(..., description="List of NFT traits")
 
 class NFTAssetTraitsResponse(BaseModel):
-    traits: NFTAssetTraits
+    __root__: Dict[str, float] = Field(..., description="NFT asset traits and rarity information")
 
 # NFT Collection Assets Models
 class NFTCollectionAssetsRequest(BaseModel):
@@ -65,14 +65,14 @@ class NFTCollectionAsset(BaseModel):
     rank: int = Field(..., description="Rarity rank")
 
 class NFTCollectionAssetsResponse(BaseModel):
-    assets: List[NFTCollectionAsset]
+    __root__: List[NFTCollectionAsset] = Field(..., description="List of NFT collection assets")
 
 # NFT Collection Holders Distribution Models
 class NFTCollectionHoldersDistributionRequest(BaseModel):
     policy: str = Field(..., description="Policy ID of the collection")
 
 class NFTCollectionHoldersDistributionResponse(BaseModel):
-    distribution: Dict[str, int] = Field(..., description="Distribution of holders by quantity ranges")
+    __root__: Dict[str, int] = Field(..., description="Distribution of holders by quantity ranges")
 
 # NFT Collection Top Holders Models
 class NFTCollectionTopHoldersRequest(BaseModel):
@@ -86,7 +86,7 @@ class NFTCollectionHolder(BaseModel):
     amount: int = Field(..., description="Number of NFTs held")
 
 class NFTCollectionTopHoldersResponse(BaseModel):
-    holders: List[NFTCollectionHolder]
+    __root__: List[NFTCollectionHolder] = Field(..., description="List of top NFT holders")
 
 # NFT Collection Holders Trended Models
 class NFTCollectionHoldersTrendedRequest(BaseModel):
@@ -98,7 +98,7 @@ class NFTHolderTrend(BaseModel):
     time: int = Field(..., description="Unix timestamp")
 
 class NFTCollectionHoldersTrendedResponse(BaseModel):
-    trends: List[NFTHolderTrend]
+    __root__: List[NFTHolderTrend] = Field(..., description="List of holder trend data points")
 
 # NFT Collection Info Models
 class NFTCollectionInfoRequest(BaseModel):
@@ -114,7 +114,7 @@ class NFTCollectionInfo(BaseModel):
     website: Optional[str] = Field(None, description="Website URL")
 
 class NFTCollectionInfoResponse(BaseModel):
-    info: NFTCollectionInfo
+    __root__: Dict[str, str] = Field(..., description="NFT collection information")
 
 # NFT Collection Listings Models
 class NFTCollectionListingsRequest(BaseModel):
@@ -125,7 +125,7 @@ class NFTCollectionListings(BaseModel):
     supply: int = Field(..., description="Total supply")
 
 class NFTCollectionListingsResponse(BaseModel):
-    listings: NFTCollectionListings
+    __root__: Dict[str, int] = Field(..., description="NFT collection listings information")
 
 # NFT Collection Listings Depth Models
 class NFTCollectionListingsDepthRequest(BaseModel):
@@ -139,7 +139,7 @@ class ListingDepth(BaseModel):
     total: float = Field(..., description="Total value in ADA")
 
 class NFTCollectionListingsDepthResponse(BaseModel):
-    depth: List[ListingDepth]
+    __root__: List[ListingDepth] = Field(..., description="List of listing depth data points")
 
 # NFT Collection Individual Listings Models
 class NFTCollectionIndividualListingsRequest(BaseModel):
@@ -157,7 +157,7 @@ class NFTListing(BaseModel):
     time: int = Field(..., description="Unix timestamp of listing")
 
 class NFTCollectionIndividualListingsResponse(BaseModel):
-    listings: List[NFTListing]
+    __root__: List[NFTListing] = Field(..., description="List of individual NFT listings")
 
 # NFT Collection Listings Trended Models
 class NFTCollectionListingsTrendedRequest(BaseModel):
@@ -171,7 +171,7 @@ class ListingTrend(BaseModel):
     time: int = Field(..., description="Unix timestamp")
 
 class NFTCollectionListingsTrendedResponse(BaseModel):
-    trends: List[ListingTrend]
+    __root__: List[ListingTrend] = Field(..., description="List of listing trend data points")
 
 # NFT Collection OHLCV Models
 class NFTCollectionOHLCVRequest(BaseModel):
@@ -188,7 +188,7 @@ class NFTOHLCV(BaseModel):
     volume: float = Field(..., description="Trading volume in ADA")
 
 class NFTCollectionOHLCVResponse(BaseModel):
-    ohlcv: List[NFTOHLCV]
+    __root__: List[NFTOHLCV] = Field(..., description="List of OHLCV data points")
 
 # NFT Collection Stats Models
 class NFTCollectionStatsRequest(BaseModel):
@@ -204,7 +204,7 @@ class NFTCollectionStats(BaseModel):
     volume: float = Field(..., description="Total trading volume in ADA")
 
 class NFTCollectionStatsResponse(BaseModel):
-    stats: NFTCollectionStats
+    __root__: Dict[str, float] = Field(..., description="NFT collection statistics")
 
 # NFT Collection Extended Stats Models
 class NFTCollectionExtendedStatsRequest(BaseModel):
@@ -226,7 +226,7 @@ class NFTCollectionExtendedStats(BaseModel):
     volume_pct_chg: float = Field(..., description="Percent change in volume")
 
 class NFTCollectionExtendedStatsResponse(BaseModel):
-    stats: NFTCollectionExtendedStats
+    __root__: Dict[str, float] = Field(..., description="NFT collection extended statistics")
 
 # NFT Collection Trades Models
 class NFTCollectionTradesRequest(BaseModel):
@@ -252,7 +252,7 @@ class NFTTrade(BaseModel):
     time: int = Field(..., description="Unix timestamp")
 
 class NFTCollectionTradesResponse(BaseModel):
-    trades: List[NFTTrade]
+    __root__: List[NFTTrade] = Field(..., description="List of NFT trades")
 
 # NFT Collection Trade Stats Models
 class NFTCollectionTradeStatsRequest(BaseModel):
@@ -266,7 +266,7 @@ class NFTCollectionTradeStats(BaseModel):
     volume: float = Field(..., description="Trading volume in ADA")
 
 class NFTCollectionTradeStatsResponse(BaseModel):
-    stats: NFTCollectionTradeStats
+    __root__: Dict[str, float] = Field(..., description="NFT collection trade statistics")
 
 # NFT Collection Trait Prices Models
 class NFTCollectionTraitPricesRequest(BaseModel):
@@ -304,7 +304,7 @@ class VolumeTrend(BaseModel):
     volume: float = Field(..., description="Trading volume")
 
 class NFTCollectionVolumeTrendedResponse(BaseModel):
-    trends: List[VolumeTrend]
+    __root__: List[VolumeTrend] = Field(..., description="List of volume trend data points")
 
 # NFT Market Stats Models
 class NFTMarketStatsRequest(BaseModel):
@@ -318,7 +318,7 @@ class NFTMarketStats(BaseModel):
     volume: float = Field(..., description="Trading volume in ADA")
 
 class NFTMarketStatsResponse(BaseModel):
-    stats: NFTMarketStats
+    __root__: Dict[str, float] = Field(..., description="NFT market statistics")
 
 # NFT Market Extended Stats Models
 class NFTMarketExtendedStatsRequest(BaseModel):
@@ -337,7 +337,7 @@ class NFTMarketExtendedStats(BaseModel):
     volume_pct_chg: float = Field(..., description="Percent change in volume")
 
 class NFTMarketExtendedStatsResponse(BaseModel):
-    stats: NFTMarketExtendedStats
+    __root__: Dict[str, float] = Field(..., description="NFT market extended statistics")
 
 # NFT Market Volume Trended Models
 class NFTMarketVolumeTrendedRequest(BaseModel):
@@ -348,7 +348,7 @@ class MarketVolumeTrend(BaseModel):
     value: float = Field(..., description="Volume value")
 
 class NFTMarketVolumeTrendedResponse(BaseModel):
-    trends: List[MarketVolumeTrend]
+    __root__: List[MarketVolumeTrend] = Field(..., description="List of market volume trend data points")
 
 # NFT Marketplace Stats Models
 class NFTMarketplaceStatsRequest(BaseModel):
@@ -368,7 +368,7 @@ class NFTMarketplaceStats(BaseModel):
     volume: float = Field(..., description="Trading volume")
 
 class NFTMarketplaceStatsResponse(BaseModel):
-    stats: List[NFTMarketplaceStats]
+    __root__: List[NFTMarketplaceStats] = Field(..., description="List of marketplace statistics")
 
 # NFT Top Rankings Models
 class NFTTopTimeframeRequest(BaseModel):
@@ -395,7 +395,7 @@ class NFTTopRanking(BaseModel):
     volume_7d_chg: float = Field(..., description="7d volume change")
 
 class NFTTopTimeframeResponse(BaseModel):
-    rankings: List[NFTTopRanking]
+    __root__: List[NFTTopRanking] = Field(..., description="List of top NFT rankings")
 
 # NFT Top Volume Models
 class NFTTopVolumeRequest(BaseModel):
@@ -414,7 +414,7 @@ class NFTTopVolume(BaseModel):
     volume: float = Field(..., description="Trading volume")
 
 class NFTTopVolumeResponse(BaseModel):
-    volumes: List[NFTTopVolume]
+    __root__: List[NFTTopVolume] = Field(..., description="List of top NFT volumes")
 
 # NFT Top Volume Extended Models
 class NFTTopVolumeExtendedRequest(BaseModel):
@@ -439,4 +439,4 @@ class NFTTopVolumeExtended(BaseModel):
     volume_pct_chg: float = Field(..., description="Percent change in volume")
 
 class NFTTopVolumeExtendedResponse(BaseModel):
-    volumes: List[NFTTopVolumeExtended]
+    __root__: List[NFTTopVolumeExtended] = Field(..., description="List of extended top NFT volumes")

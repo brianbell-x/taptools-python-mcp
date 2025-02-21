@@ -5,6 +5,10 @@ import logging
 import httpx
 from typing import Dict, Any
 
+from ..models.market import (
+    MarketStatsRequest, MarketStatsResponse,
+    MarketStats, MetricsResponse
+)
 from ..utils.exceptions import TapToolsError, ErrorType
 
 logger = logging.getLogger("taptools_mcp")
@@ -48,26 +52,16 @@ class MarketAPI:
                 error_type=ErrorType.UNKNOWN
             )
 
-    async def get_market_stats(self, quote: str = "ADA") -> Dict[str, Any]:
+    async def get_market_stats(self, request: MarketStatsRequest) -> MarketStatsResponse:
         """
         GET /market/stats
         
         Get aggregated market stats (24h DEX volume, active addresses).
-        
-        Args:
-            quote (str, optional): Quote currency (e.g. 'ADA'). Defaults to 'ADA'.
-        
-        Returns:
-            Dict[str, Any]: Market stats including:
-                - activeAddresses: Number of active addresses
-                - dexVolume: 24h DEX volume in quote currency
-        
-        Example response:
-            {
-                "activeAddresses": 24523,
-                "dexVolume": 8134621.35
-            }
         """
         url = "/market/stats"
-        params = {"quote": quote}
-        return await self._make_request("get", url, params=params)
+        params = request.model_dump(exclude_none=True)
+        response_data = await self._make_request("get", url, params=params)
+        return MarketStatsResponse(stats=MarketStats(
+            active_addresses=response_data["activeAddresses"],
+            dex_volume=response_data["dexVolume"]
+        ))

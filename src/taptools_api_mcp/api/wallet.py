@@ -3,8 +3,13 @@ WalletAPI for wallet-related endpoints.
 """
 import logging
 import httpx
-from typing import Dict, Any, Optional
+from typing import Dict, Any, List
 
+from ..models.wallet import (
+    WalletPortfolioPositionsRequest, WalletPortfolioPositionsResponse,
+    WalletTokenTradesRequest, WalletTokenTrade,
+    WalletValueTrendedRequest, WalletValueTrend
+)
 from ..utils.exceptions import TapToolsError, ErrorType
 
 logger = logging.getLogger("taptools_mcp")
@@ -48,47 +53,44 @@ class WalletAPI:
                 error_type=ErrorType.UNKNOWN
             )
 
-    async def get_wallet_portfolio_positions(self, address: str) -> Dict[str, Any]:
+    async def get_wallet_portfolio_positions(
+        self,
+        request: WalletPortfolioPositionsRequest
+    ) -> WalletPortfolioPositionsResponse:
         """
         GET /wallet/portfolio/positions
         
         Retrieve current wallet positions: tokens, NFTs, LP farms, etc.
         """
         url = "/wallet/portfolio/positions"
-        params = {"address": address}
-        return await self._make_request("get", url, params=params)
+        params = request.model_dump(exclude_none=True)
+        response_data = await self._make_request("get", url, params=params)
+        return WalletPortfolioPositionsResponse(**response_data)
 
     async def get_wallet_trades_tokens(
-        self, 
-        address: str, 
-        unit: Optional[str] = None
-    ) -> Dict[str, Any]:
+        self,
+        request: WalletTokenTradesRequest
+    ) -> List[WalletTokenTrade]:
         """
         GET /wallet/trades/tokens
         
         Get token trade history for a wallet (optionally filter by token).
         """
         url = "/wallet/trades/tokens"
-        params = {"address": address}
-        if unit:
-            params["unit"] = unit
-        return await self._make_request("get", url, params=params)
+        params = request.model_dump(exclude_none=True)
+        response_data = await self._make_request("get", url, params=params)
+        return [WalletTokenTrade(**trade) for trade in response_data]
 
     async def get_wallet_value_trended(
-        self, 
-        address: str, 
-        timeframe: str = "30d", 
-        quote: str = "ADA"
-    ) -> Dict[str, Any]:
+        self,
+        request: WalletValueTrendedRequest
+    ) -> List[WalletValueTrend]:
         """
         GET /wallet/value/trended
         
         Get historical value of a wallet in 4hr intervals.
         """
         url = "/wallet/value/trended"
-        params = {
-            "address": address,
-            "timeframe": timeframe,
-            "quote": quote
-        }
-        return await self._make_request("get", url, params=params)
+        params = request.model_dump(exclude_none=True)
+        response_data = await self._make_request("get", url, params=params)
+        return [WalletValueTrend(**trend) for trend in response_data]

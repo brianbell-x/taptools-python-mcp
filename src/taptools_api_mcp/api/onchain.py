@@ -3,8 +3,14 @@ OnchainAPI for onchain data endpoints.
 """
 import logging
 import httpx
-from typing import Dict, Any, Optional
+from typing import Dict, Any
 
+from ..models.onchain import (
+    AssetSupplyRequest, AssetSupplyResponse,
+    AddressInfoRequest, AddressInfoResponse,
+    AddressUTXOsRequest, AddressUTXOsResponse,
+    TransactionUTXOsRequest, TransactionUTXOsResponse
+)
 from ..utils.exceptions import TapToolsError, ErrorType
 
 logger = logging.getLogger("taptools_mcp")
@@ -48,63 +54,46 @@ class OnchainAPI:
                 error_type=ErrorType.UNKNOWN
             )
 
-    async def get_asset_supply(self, unit: str) -> Dict[str, Any]:
+    async def get_asset_supply(self, request: AssetSupplyRequest) -> AssetSupplyResponse:
         """
         GET /asset/supply
         
         Get onchain supply for a token.
         """
         url = "/asset/supply"
-        params = {"unit": unit}
-        return await self._make_request("get", url, params=params)
+        params = request.model_dump(exclude_none=True)
+        response_data = await self._make_request("get", url, params=params)
+        return AssetSupplyResponse(**response_data)
 
-    async def get_address_info(
-        self, 
-        address: Optional[str] = None, 
-        payment_cred: Optional[str] = None
-    ) -> Dict[str, Any]:
+    async def get_address_details(self, request: AddressInfoRequest) -> AddressInfoResponse:
         """
         GET /address/info
         
         Read address info: payment cred, stake address, lovelace, multi-asset balances.
         """
         url = "/address/info"
-        params = {}
-        if address:
-            params["address"] = address
-        if payment_cred:
-            params["paymentCred"] = payment_cred
-        return await self._make_request("get", url, params=params)
+        params = request.model_dump(exclude_none=True)
+        response_data = await self._make_request("get", url, params=params)
+        return AddressInfoResponse(**response_data)
 
-    async def get_address_utxos(
-        self, 
-        address: Optional[str] = None, 
-        payment_cred: Optional[str] = None, 
-        page: int = 1, 
-        per_page: int = 100
-    ) -> Dict[str, Any]:
+    async def get_address_utxos(self, request: AddressUTXOsRequest) -> AddressUTXOsResponse:
         """
         GET /address/utxos
         
         Get current UTxOs for an address or payment credential.
         """
         url = "/address/utxos"
-        params = {
-            "page": page,
-            "perPage": per_page
-        }
-        if address:
-            params["address"] = address
-        if payment_cred:
-            params["paymentCred"] = payment_cred
-        return await self._make_request("get", url, params=params)
+        params = request.model_dump(exclude_none=True)
+        response_data = await self._make_request("get", url, params=params)
+        return AddressUTXOsResponse(**response_data)
 
-    async def get_transaction_utxos(self, hash: str) -> Dict[str, Any]:
+    async def get_transaction_details(self, request: TransactionUTXOsRequest) -> TransactionUTXOsResponse:
         """
         GET /transaction/utxos
         
         Retrieve UTxOs from a specific transaction.
         """
         url = "/transaction/utxos"
-        params = {"hash": hash}
-        return await self._make_request("get", url, params=params)
+        params = request.model_dump(exclude_none=True)
+        response_data = await self._make_request("get", url, params=params)
+        return TransactionUTXOsResponse(**response_data)

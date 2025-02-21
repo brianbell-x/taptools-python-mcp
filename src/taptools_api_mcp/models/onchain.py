@@ -44,10 +44,6 @@ class AddressUTXOsResponse(BaseModel):
 class TransactionUTXOsRequest(BaseModel):
     hash: str = Field(..., description="Transaction hash")
 
-class TransactionUTXOs(BaseModel):
-    hash: str = Field(..., description="Transaction hash")
-    inputs: List[Dict] = Field(..., description="List of transaction inputs")
-    outputs: List[Dict] = Field(..., description="List of transaction outputs")
-
 class TransactionUTXOsResponse(BaseModel):
-    transaction: TransactionUTXOs
+    inputs: Dict[str, List[Dict]] = Field(..., description="Dictionary mapping input addresses to lists of UTXOs")
+    outputs: Dict[str, List[Dict]] = Field(..., description="Dictionary mapping output addresses to lists of UTXOs")

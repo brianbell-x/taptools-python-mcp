@@ -28,7 +28,7 @@ class TokenDebtLoan(BaseModel):
     time: int = Field(..., description="Unix timestamp of loan creation")
 
 class TokenDebtLoansResponse(BaseModel):
-    loans: List[TokenDebtLoan]
+    __root__: List[TokenDebtLoan] = Field(..., description="List of active P2P loans")
 
 # Token Debt Offers Models
 class TokenDebtOffersRequest(BaseModel):
@@ -56,7 +56,7 @@ class TokenDebtOffer(BaseModel):
     time: int = Field(..., description="Unix timestamp of offer creation")
 
 class TokenDebtOffersResponse(BaseModel):
-    offers: List[TokenDebtOffer]
+    __root__: List[TokenDebtOffer] = Field(..., description="List of active P2P loan offers")
 
 # Token Holders Models
 class TokenHoldersRequest(BaseModel):
@@ -76,7 +76,7 @@ class TokenHolder(BaseModel):
     amount: float = Field(..., description="Token amount held")
 
 class TokenTopHoldersResponse(BaseModel):
-    holders: List[TokenHolder]
+    __root__: List[TokenHolder] = Field(..., description="List of top token holders")
 
 # Token Indicators Models
 class TokenIndicatorsRequest(BaseModel):
@@ -87,13 +87,13 @@ class TokenIndicatorsRequest(BaseModel):
     quote: Optional[str] = Field(None, description="Quote currency")
 
 class TokenIndicatorsResponse(BaseModel):
-    values: List[float]
+    __root__: List[float] = Field(..., description="List of indicator values")
 
 # Token Links Models
 class TokenLinksRequest(BaseModel):
     unit: str = Field(..., description="Token unit identifier")
 
-class TokenLinks(BaseModel):
+class TokenLinksResponse(BaseModel):
     description: Optional[str] = Field(None, description="Token description")
     discord: Optional[str] = Field(None, description="Discord link")
     email: Optional[str] = Field(None, description="Contact email")
@@ -106,9 +106,6 @@ class TokenLinks(BaseModel):
     twitter: Optional[str] = Field(None, description="Twitter link")
     website: Optional[str] = Field(None, description="Website link")
     youtube: Optional[str] = Field(None, description="YouTube link")
-
-class TokenLinksResponse(BaseModel):
-    links: TokenLinks
 
 # Token Market Cap Models
 class TokenMcapRequest(BaseModel):
@@ -123,7 +120,7 @@ class TokenMcap(BaseModel):
     total_supply: float = Field(..., description="Total supply")
 
 class TokenMcapResponse(BaseModel):
-    market_cap: TokenMcap
+    __root__: TokenMcap = Field(..., description="Token market cap information")
 
 # Token OHLCV Models
 class TokenOHLCVRequest(BaseModel):
@@ -141,7 +138,7 @@ class TokenOHLCV(BaseModel):
     volume: float = Field(..., description="Trading volume")
 
 class TokenOHLCVResponse(BaseModel):
-    ohlcv: List[TokenOHLCV]
+    __root__: List[TokenOHLCV] = Field(..., description="List of OHLCV data points")
 
 # Token Pools Models
 class TokenPoolsRequest(BaseModel):
@@ -161,14 +158,14 @@ class TokenPool(BaseModel):
     token_b_ticker: str = Field(..., description="Second token ticker")
 
 class TokenPoolsResponse(BaseModel):
-    pools: List[TokenPool]
+    __root__: List[TokenPool] = Field(..., description="List of liquidity pools")
 
 # Token Prices Models
 class TokenPricesRequest(BaseModel):
     units: List[str] = Field(..., description="List of token units")
 
 class TokenPricesResponse(BaseModel):
-    prices: Dict[str, float]
+    __root__: Dict[str, float] = Field(..., description="Token prices by unit")
 
 # Token Price Changes Models
 class TokenPriceChangesRequest(BaseModel):
@@ -176,7 +173,7 @@ class TokenPriceChangesRequest(BaseModel):
     timeframes: Optional[str] = Field(None, description="Comma-delimited timeframes")
 
 class TokenPriceChangesResponse(BaseModel):
-    changes: Dict[str, float]
+    __root__: Dict[str, float] = Field(..., description="Price changes by timeframe")
 
 # Token Quote Models
 class TokenQuoteRequest(BaseModel):
@@ -186,7 +183,7 @@ class TokenQuoteResponse(BaseModel):
     price: float = Field(..., description="Current quote price")
 
 class TokenQuoteAvailableResponse(BaseModel):
-    quotes: List[str]
+    __root__: List[str] = Field(..., description="List of available quote currencies")
 
 # Token Top Liquidity Models
 class TokenTopLiquidityRequest(BaseModel):
@@ -200,7 +197,7 @@ class TokenLiquidity(BaseModel):
     unit: str = Field(..., description="Token unit")
 
 class TokenTopLiquidityResponse(BaseModel):
-    tokens: List[TokenLiquidity]
+    __root__: List[TokenLiquidity] = Field(..., description="List of tokens ranked by liquidity")
 
 # Token Trading Stats Models
 class TokenTradingStatsRequest(BaseModel):
@@ -216,4 +213,59 @@ class TokenTradingStats(BaseModel):
     sells: int = Field(..., description="Number of sell trades")
 
 class TokenTradingStatsResponse(BaseModel):
-    stats: TokenTradingStats
+    __root__: TokenTradingStats = Field(..., description="Trading statistics")
+
+# Token Top Market Cap Models
+class TokenTopMcapRequest(BaseModel):
+    type: Optional[str] = Field("mcap", description="Ranking type: 'mcap' or 'fdv'")
+    page: Optional[int] = Field(1, description="Page number")
+    per_page: Optional[int] = Field(20, description="Items per page, max 100")
+
+class TokenTopMcap(BaseModel):
+    circ_supply: float = Field(..., description="Circulating supply")
+    fdv: float = Field(..., description="Fully diluted valuation")
+    mcap: float = Field(..., description="Market capitalization")
+    price: float = Field(..., description="Current price")
+    ticker: str = Field(..., description="Token ticker")
+    total_supply: float = Field(..., description="Total supply")
+    unit: str = Field(..., description="Token unit identifier")
+
+class TokenTopMcapResponse(BaseModel):
+    __root__: List[TokenTopMcap] = Field(..., description="List of tokens ranked by market cap")
+
+# Token Top Volume Models
+class TokenTopVolumeRequest(BaseModel):
+    timeframe: Optional[str] = Field("24h", description="Time frame")
+    page: Optional[int] = Field(1, description="Page number")
+    per_page: Optional[int] = Field(20, description="Items per page, max 100")
+
+class TokenTopVolume(BaseModel):
+    price: float = Field(..., description="Current price")
+    ticker: str = Field(..., description="Token ticker")
+    unit: str = Field(..., description="Token unit identifier")
+    volume: float = Field(..., description="Trading volume")
+
+class TokenTopVolumeResponse(BaseModel):
+    __root__: List[TokenTopVolume] = Field(..., description="List of tokens ranked by volume")
+
+# Token Trades Models
+class TokenTradesRequest(BaseModel):
+    timeframe: Optional[str] = Field("30d", description="Time frame for trades")
+    sort_by: Optional[str] = Field("amount", description="Sort field")
+    order: Optional[str] = Field("desc", description="Sort order: 'asc' or 'desc'")
+    unit: Optional[str] = Field("", description="Token unit identifier")
+    min_amount: Optional[int] = Field(None, description="Minimum trade amount")
+    from_ts: Optional[int] = Field(None, description="From timestamp")
+    page: Optional[int] = Field(1, description="Page number")
+    per_page: Optional[int] = Field(100, description="Items per page, max 100")
+
+class TokenTrade(BaseModel):
+    amount: float = Field(..., description="Trade amount")
+    price: float = Field(..., description="Trade price")
+    side: str = Field(..., description="Trade side: 'buy' or 'sell'")
+    time: int = Field(..., description="Unix timestamp of trade")
+    token: str = Field(..., description="Token unit identifier")
+    value: float = Field(..., description="Trade value")
+
+class TokenTradesResponse(BaseModel):
+    __root__: List[TokenTrade] = Field(..., description="List of token trades")

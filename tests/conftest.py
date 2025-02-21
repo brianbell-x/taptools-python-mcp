@@ -65,10 +65,46 @@ def sample_token_data():
 @pytest.fixture
 def sample_error_response():
     """
-    Sample error response data.
+    Factory fixture to create sample error responses matching ErrorData model.
+    Returns a function that generates error responses for different scenarios.
     """
-    return {
-        "error": "Invalid request",
-        "message": "Required parameter missing",
-        "code": "INVALID_PARAMS"
-    }
+    def _error_response(error_type="validation"):
+        responses = {
+            "authentication": {
+                "code": -32001,
+                "message": "Invalid or unauthorized API key",
+                "data": {"error_type": "authentication"}
+            },
+            "connection": {
+                "code": -32002,
+                "message": "Failed to connect to API endpoint",
+                "data": {"error_type": "connection"}
+            },
+            "validation": {
+                "code": -32003,
+                "message": "Required parameter 'unit' is missing",
+                "data": {"error_type": "validation"}
+            },
+            "rate_limit": {
+                "code": -32005,
+                "message": "Rate limit exceeded. Please try again later",
+                "data": {"error_type": "rate_limit"}
+            },
+            "not_found": {
+                "code": -32006,
+                "message": "Requested resource not found",
+                "data": {"error_type": "not_found"}
+            },
+            "timeout": {
+                "code": -32008,
+                "message": "Request timed out",
+                "data": {"error_type": "timeout"}
+            },
+            "parse": {
+                "code": -32009,
+                "message": "Failed to parse API response",
+                "data": {"error_type": "parse"}
+            }
+        }
+        return responses.get(error_type, responses["validation"])
+    return _error_response

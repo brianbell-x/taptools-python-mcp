@@ -51,7 +51,7 @@ class IntegrationExchangeResponse(BaseModel):
 
 # Integration Latest Block Models
 class IntegrationLatestBlockResponse(BaseModel):
-    block: IntegrationBlock
+    block: IntegrationBlock = Field(..., description="Latest block information")
 
 # Integration Pair Models
 class IntegrationPairRequest(BaseModel):

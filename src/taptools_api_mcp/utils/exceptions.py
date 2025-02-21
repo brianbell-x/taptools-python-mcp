@@ -58,16 +58,22 @@ class TapToolsError(Exception):
         error_type = ErrorType.UNKNOWN
         
         if status_code:
-            if status_code == 401:
+            if status_code == 400:
+                error_type = ErrorType.VALIDATION
+            elif status_code in (401, 403):
                 error_type = ErrorType.AUTHENTICATION
             elif status_code == 404:
                 error_type = ErrorType.NOT_FOUND
+            elif status_code == 408:
+                error_type = ErrorType.TIMEOUT
             elif status_code == 429:
                 error_type = ErrorType.RATE_LIMIT
             elif status_code >= 400 and status_code < 500:
                 error_type = ErrorType.VALIDATION
-            else:
+            elif status_code >= 500:
                 error_type = ErrorType.API
+            else:
+                error_type = ErrorType.UNKNOWN
 
         return cls(
             message=message or str(error),
