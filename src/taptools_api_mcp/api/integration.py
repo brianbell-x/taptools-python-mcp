@@ -11,7 +11,8 @@ from ..models.integration import (
     IntegrationEventsRequest, IntegrationEventsResponse,
     IntegrationExchangeRequest, IntegrationExchangeResponse,
     IntegrationLatestBlockResponse,
-    IntegrationPairRequest, IntegrationPairResponse
+    IntegrationPairRequest, IntegrationPairResponse,
+    IntegrationPolicyAssetsRequest, IntegrationPolicyAssetsResponse
 )
 from ..utils.exceptions import TapToolsError, ErrorType
 
@@ -120,3 +121,14 @@ class IntegrationAPI:
         params = request.model_dump(exclude_none=True)
         response_data = await self._make_request("get", url, params=params)
         return IntegrationPairResponse(pair=response_data)
+
+    async def get_policy_assets(self, request: IntegrationPolicyAssetsRequest) -> IntegrationPolicyAssetsResponse:
+        """
+        GET /integration/policy/assets
+        
+        Return assets under a given policy ID.
+        """
+        url = "/integration/policy/assets"
+        params = request.model_dump(exclude_none=True)
+        response_data = await self._make_request("get", url, params=params)
+        return IntegrationPolicyAssetsResponse(**response_data)

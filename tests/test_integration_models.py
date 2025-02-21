@@ -10,7 +10,8 @@ from taptools_api_mcp.models.integration import (
     IntegrationEventsRequest, IntegrationEventsResponse,
     IntegrationExchangeRequest, IntegrationExchange, IntegrationExchangeResponse,
     IntegrationLatestBlockResponse,
-    IntegrationPairRequest, IntegrationPair, IntegrationPairResponse
+    IntegrationPairRequest, IntegrationPair, IntegrationPairResponse,
+    IntegrationPolicyAssetsRequest, PolicyAsset, IntegrationPolicyAssetsResponse
 )
 
 class TestIntegrationAssetModels:
@@ -86,6 +87,95 @@ class TestIntegrationBlockModels:
                 block_timestamp="invalid"  # Should be integer
             )
         assert "value is not a valid integer" in str(exc.value)
+
+class TestIntegrationPolicyAssetsModels:
+    def test_integration_policy_assets_request_valid(self):
+        """Test IntegrationPolicyAssetsRequest with valid data."""
+        request = IntegrationPolicyAssetsRequest(id="policy123")
+        assert request.id == "policy123"
+        assert request.page == 1  # Default value
+        assert request.per_page == 100  # Default value
+
+    def test_integration_policy_assets_request_custom_pagination(self):
+        """Test IntegrationPolicyAssetsRequest with custom pagination."""
+        request = IntegrationPolicyAssetsRequest(
+            id="policy123",
+            page=2,
+            per_page=50
+        )
+        assert request.id == "policy123"
+        assert request.page == 2
+        assert request.per_page == 50
+
+    def test_integration_policy_assets_request_missing_id(self):
+        """Test IntegrationPolicyAssetsRequest fails without required id."""
+        with pytest.raises(ValidationError) as exc:
+            IntegrationPolicyAssetsRequest()
+        assert "field required" in str(exc.value)
+        assert "id" in str(exc.value)
+
+    def test_policy_asset_valid(self):
+        """Test PolicyAsset with valid data."""
+        asset = PolicyAsset(
+            id="asset123",
+            name="Test Asset"
+        )
+        assert asset.id == "asset123"
+        assert asset.name == "Test Asset"
+
+    def test_policy_asset_invalid_types(self):
+        """Test PolicyAsset with invalid data types."""
+        with pytest.raises(ValidationError) as exc:
+            PolicyAsset(
+                id=123,  # Should be string
+                name=123  # Should be string
+            )
+        assert "str type expected" in str(exc.value)
+
+    def test_integration_policy_assets_response_valid(self):
+        """Test IntegrationPolicyAssetsResponse with valid data."""
+        assets = [
+            PolicyAsset(id="asset1", name="Asset One"),
+            PolicyAsset(id="asset2", name="Asset Two")
+        ]
+        response = IntegrationPolicyAssetsResponse(
+            id="policy123",
+            name="Test Policy",
+            description="A test policy",
+            assets=assets,
+            total_assets=2
+        )
+        assert response.id == "policy123"
+        assert response.name == "Test Policy"
+        assert response.description == "A test policy"
+        assert len(response.assets) == 2
+        assert response.total_assets == 2
+
+    def test_integration_policy_assets_response_optional_description(self):
+        """Test IntegrationPolicyAssetsResponse with optional description omitted."""
+        response = IntegrationPolicyAssetsResponse(
+            id="policy123",
+            name="Test Policy",
+            total_assets=0
+        )
+        assert response.id == "policy123"
+        assert response.name == "Test Policy"
+        assert response.description is None
+        assert len(response.assets) == 0
+        assert response.total_assets == 0
+
+    def test_integration_policy_assets_response_invalid_types(self):
+        """Test IntegrationPolicyAssetsResponse with invalid data types."""
+        with pytest.raises(ValidationError) as exc:
+            IntegrationPolicyAssetsResponse(
+                id=123,  # Should be string
+                name=123,  # Should be string
+                description=123,  # Should be string if provided
+                total_assets="invalid"  # Should be integer
+            )
+        assert "str type expected" in str(exc.value)
+        assert "value is not a valid integer" in str(exc.value)
+        assert "id" in str(exc.value)
 
 class TestIntegrationEventsModels:
     def test_integration_events_request_valid(self):
