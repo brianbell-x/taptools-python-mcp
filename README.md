@@ -1,4 +1,5 @@
 # TapTools API MCP
+[![smithery badge](https://smithery.ai/badge/@brianbell-x/tadpoletools-mcp)](https://smithery.ai/server/@brianbell-x/tadpoletools-mcp)
 
 A Python-based Model Context Protocol (MCP) server that provides access to the [TapTools API](https://taptools.io), enabling Large Language Models (LLMs) (like Claude or GPT) to fetch Cardano-related data (tokens, NFTs, market info, etc.). This server standardizes TapTools API operations into MCP "tools," allowing easy integration into AI workflows.
 
@@ -15,6 +16,15 @@ A Python-based Model Context Protocol (MCP) server that provides access to the [
 
 ## Quick Start
 
+### Installing via Smithery
+
+To install TapTools API Integration for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@brianbell-x/tadpoletools-mcp):
+
+```bash
+npx -y @smithery/cli install @brianbell-x/tadpoletools-mcp --client claude
+```
+
+### Manual Installation
 1. **Clone the repository**:
    ```bash
    git clone https://github.com/yourusername/taptools-api-mcp.git
