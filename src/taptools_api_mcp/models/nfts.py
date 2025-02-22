@@ -14,7 +14,7 @@ class NFTSale(BaseModel):
     time: int = Field(..., description="Unix timestamp of the sale", example=16000840)
 
 class NFTAssetSalesResponse(BaseModel):
-    __root__: List[NFTSale] = Field(..., description="NFT Sales.", example=[{
+    sales: List[NFTSale] = Field(..., description="NFT Sales.", example=[{
         "buyerStakeAddress": "stake1address2",
         "price": 8000,
         "sellerStakeAddress": "stake1address1",
@@ -85,7 +85,7 @@ class NFTCollectionAsset(BaseModel):
     rank: int = Field(..., description="Rarity rank", example=2)
 
 class NFTCollectionAssetsResponse(BaseModel):
-    __root__: List[NFTCollectionAsset] = Field(..., description="Collection assets.", example=[{
+    assets: List[NFTCollectionAsset] = Field(..., description="Collection assets.", example=[{
         "name": "ClayNation3725",
         "rank": 2,
         "price": 20,
@@ -97,7 +97,7 @@ class NFTCollectionHoldersDistributionRequest(BaseModel):
     policy: str = Field(..., description="Policy ID of the collection")
 
 class NFTCollectionHoldersDistributionResponse(BaseModel):
-    __root__: Dict[str, int] = Field(..., description="Distribution of holders by quantity ranges", example={
+    distribution: Dict[str, int] = Field(..., description="Distribution of holders by quantity ranges", example={
         "1": 1154,
         "2-4": 631,
         "5-9": 327,
@@ -117,7 +117,7 @@ class NFTCollectionHolder(BaseModel):
     amount: int = Field(..., description="Number of NFTs held", example=27)
 
 class NFTCollectionTopHoldersResponse(BaseModel):
-    __root__: List[NFTCollectionHolder] = Field(..., description="Top collection holders", example=[{
+    holders: List[NFTCollectionHolder] = Field(..., description="Top collection holders", example=[{
         "address": "stake1u8mvwfn298a4dkm92hrgeupnnuzhxfwl5lauzuejl5cf8esrtjn6w",
         "amount": 27
     }])
@@ -132,7 +132,7 @@ class NFTHolderTrend(BaseModel):
     time: int = Field(..., description="Unix timestamp", example=1705874400)
 
 class NFTCollectionHoldersTrendedResponse(BaseModel):
-    __root__: List[NFTHolderTrend] = Field(..., description="Trended collection holders", example=[{
+    trends: List[NFTHolderTrend] = Field(..., description="Trended collection holders", example=[{
         "time": 1705874400,
         "holders": 3125
     }])
@@ -183,7 +183,7 @@ class ListingDepth(BaseModel):
     total: float = Field(..., description="Total value in ADA", example=456000)
 
 class NFTCollectionListingsDepthResponse(BaseModel):
-    __root__: List[ListingDepth] = Field(..., description="Listings depth", example=[{
+    depth: List[ListingDepth] = Field(..., description="Listings depth", example=[{
         "count": 96,
         "price": 9600,
         "avg": 4850,
@@ -206,7 +206,7 @@ class NFTListing(BaseModel):
     time: int = Field(..., description="Unix timestamp of listing", example=1680135943)
 
 class NFTCollectionIndividualListingsResponse(BaseModel):
-    __root__: List[NFTListing] = Field(..., description="Information about listing", example=[{
+    listings: List[NFTListing] = Field(..., description="Information about listing", example=[{
         "name": "ClayNation3725",
         "image": "ipfs://QmdnZKmDWd85BLKfsHnrJExRKE71zPGawwy7jWhc2wBwmM",
         "price": 4925,
@@ -226,7 +226,7 @@ class ListingTrend(BaseModel):
     time: int = Field(..., description="Unix timestamp", example=1680574100)
 
 class NFTCollectionListingsTrendedResponse(BaseModel):
-    __root__: List[ListingTrend] = Field(..., description="Listings", example=[{
+    trends: List[ListingTrend] = Field(..., description="Listings", example=[{
         "time": 1680574100,
         "listings": 592,
         "price": 205
@@ -247,7 +247,7 @@ class NFTOHLCV(BaseModel):
     volume: float = Field(..., description="Trading volume in ADA", example=61480)
 
 class NFTCollectionOHLCVResponse(BaseModel):
-    __root__: List[NFTOHLCV] = Field(..., description="OHLCV interval", example=[{
+    data: List[NFTOHLCV] = Field(..., description="OHLCV interval", example=[{
         "time": 1680574100,
         "open": 4000,
         "high": 4150,
@@ -335,7 +335,7 @@ class NFTTrade(BaseModel):
     time: int = Field(..., description="Unix timestamp", example=1680135943)
 
 class NFTCollectionTradesResponse(BaseModel):
-    __root__: List[NFTTrade] = Field(..., description="List of NFT trades", example=[{
+    trades: List[NFTTrade] = Field(..., description="List of NFT trades", example=[{
         "name": "ClayNation3725",
         "price": 4925,
         "market": "jpg.store",
@@ -401,7 +401,7 @@ class VolumeTrend(BaseModel):
     volume: float = Field(..., description="Trading volume")
 
 class NFTCollectionVolumeTrendedResponse(BaseModel):
-    __root__: List[VolumeTrend] = Field(..., description="List of volume trend data points")
+    trends: List[VolumeTrend] = Field(..., description="List of volume trend data points")
 
 # NFT Market Stats Models
 class NFTMarketStatsRequest(BaseModel):
@@ -458,7 +458,7 @@ class MarketVolumeTrend(BaseModel):
     value: float = Field(..., description="Volume value", example=783125)
 
 class NFTMarketVolumeTrendedResponse(BaseModel):
-    __root__: List[MarketVolumeTrend] = Field(..., description="Trended NFT market volume", example=[{
+    trends: List[MarketVolumeTrend] = Field(..., description="Trended NFT market volume", example=[{
         "time": 1690171200,
         "value": 783125
     }])
@@ -481,7 +481,7 @@ class NFTMarketplaceStats(BaseModel):
     volume: float = Field(..., description="Trading volume", example=876345.312)
 
 class NFTMarketplaceStatsResponse(BaseModel):
-    __root__: List[NFTMarketplaceStats] = Field(..., description="Marketplace stats", example=[{
+    marketplaces: List[NFTMarketplaceStats] = Field(..., description="Marketplace stats", example=[{
         "name": "jpg.store",
         "volume": 876345.312,
         "sales": 7832,
@@ -518,7 +518,7 @@ class NFTTopRanking(BaseModel):
     volume_7d_chg: float = Field(..., description="7d volume change", example=-0.11)
 
 class NFTTopTimeframeResponse(BaseModel):
-    __root__: List[NFTTopRanking] = Field(..., description="NFT Rankings.", example=[{
+    rankings: List[NFTTopRanking] = Field(..., description="NFT Rankings.", example=[{
         "rank": 1,
         "price_24h_chg": 0.5,
         "price_7d_chg": 0.6,
@@ -555,7 +555,7 @@ class NFTTopVolume(BaseModel):
     volume: int = Field(..., description="Trading volume", example=49606)
 
 class NFTTopVolumeResponse(BaseModel):
-    __root__: List[NFTTopVolume] = Field(..., description="List of top NFT volumes", example=[{
+    volumes: List[NFTTopVolume] = Field(..., description="List of top NFT volumes", example=[{
         "policy": "1fcf4baf8e7465504e115dcea4db6da1f7bed335f2a672e44ec3f94e",
         "name": "Stag Alliance",
         "logo": "ipfs://QmZ3mjsA4YL58HZQ6pxhAp1EaibmTi15uzTNAmDekZDzNf",
@@ -589,7 +589,7 @@ class NFTTopVolumeExtended(BaseModel):
     volume_pct_chg: float = Field(..., description="Percent change in volume", example=0.014)
 
 class NFTTopVolumeExtendedResponse(BaseModel):
-    __root__: List[NFTTopVolumeExtended] = Field(..., description="List of extended top NFT volumes", example=[{
+    volumes: List[NFTTopVolumeExtended] = Field(..., description="List of extended top NFT volumes", example=[{
         "policy": "1fcf4baf8e7465504e115dcea4db6da1f7bed335f2a672e44ec3f94e",
         "name": "Stag Alliance",
         "logo": "ipfs://QmZ3mjsA4YL58HZQ6pxhAp1EaibmTi15uzTNAmDekZDzNf",

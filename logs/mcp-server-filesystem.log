@@ -1,0 +1,47 @@
+2025-02-22T04:14:49.168Z [filesystem] [info] Initializing server...
+2025-02-22T04:14:49.194Z [filesystem] [info] Server started and connected successfully
+2025-02-22T04:14:49.196Z [filesystem] [info] Message from client: {"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"claude-ai","version":"0.1.0"}},"jsonrpc":"2.0","id":0}
+2025-02-22T04:14:49.729Z [filesystem] [info] Initializing server...
+2025-02-22T04:14:49.756Z [filesystem] [info] Server started and connected successfully
+2025-02-22T04:14:49.758Z [filesystem] [info] Message from client: {"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"claude-ai","version":"0.1.0"}},"jsonrpc":"2.0","id":0}
+npm warn tar TAR_ENTRY_ERROR UNKNOWN: unknown error, open 'C:\Users\bbell\AppData\Local\npm-cache\_npx\a3241bba59c344f5\node_modules\emoji-regex\es2015\index.js'
+npm warn tar TAR_ENTRY_ERROR UNKNOWN: unknown error, open 'C:\Users\bbell\AppData\Local\npm-cache\_npx\a3241bba59c344f5\node_modules\@isaacs\cliui\build\index.cjs'
+npm warn tar TAR_ENTRY_ERROR UNKNOWN: unknown error, open 'C:\Users\bbell\AppData\Local\npm-cache\_npx\a3241bba59c344f5\node_modules\ansi-styles\index.js'
+npm warn tar TAR_ENTRY_ERROR UNKNOWN: unknown error, open 'C:\Users\bbell\AppData\Local\npm-cache\_npx\a3241bba59c344f5\node_modules\color-name\index.js'
+npm warn tar TAR_ENTRY_ERROR UNKNOWN: unknown error, open 'C:\Users\bbell\AppData\Local\npm-cache\_npx\a3241bba59c344f5\node_modules\shebang-regex\index.d.ts'
+npm warn tar TAR_ENTRY_ERROR UNKNOWN: unknown error, open 'C:\Users\bbell\AppData\Local\npm-cache\_npx\a3241bba59c344f5\node_modules\ansi-regex\index.js'
+npm warn tar TAR_ENTRY_ERROR UNKNOWN: unknown error, open 'C:\Users\bbell\AppData\Local\npm-cache\_npx\a3241bba59c344f5\node_modules\@isaacs\cliui\build\index.d.cts'
+npm warn tar TAR_ENTRY_ERROR UNKNOWN: unknown error, open 'C:\Users\bbell\AppData\Local\npm-cache\_npx\a3241bba59c344f5\node_modules\minimatch\LICENSE'
+npm warn tar TAR_ENTRY_ERROR UNKNOWN: unknown error, open 'C:\Users\bbell\AppData\Local\npm-cache\_npx\a3241bba59c344f5\node_modules\emoji-regex\es2015\text.js'
+npm warn tar TAR_ENTRY_ERROR UNKNOWN: unknown error, open 'C:\Users\bbell\AppData\Local\npm-cache\_npx\a3241bba59c344f5\node_modules\@isaacs\cliui\index.mjs'
+npm warn tar TAR_ENTRY_ERROR UNKNOWN: unknown error, open 'C:\Users\bbell\AppData\Local\npm-cache\_npx\a3241bba59c344f5\node_modules\@isaacs\cliui\LICENSE.txt'
+Error accessing directory C:\Users\username\Downloads: Error: ENOENT: no such file or directory, stat 'C:\Users\username\Downloads'
+    at async Object.stat (node:internal/fs/promises:1032:18)
+    at async file:///C:/Users/bbell/AppData/Local/npm-cache/_npx/a3241bba59c344f5/node_modules/@modelcontextprotocol/server-filesystem/dist/index.js:33:23
+    at async Promise.all (index 1)
+    at async file:///C:/Users/bbell/AppData/Local/npm-cache/_npx/a3241bba59c344f5/node_modules/@modelcontextprotocol/server-filesystem/dist/index.js:31:1 {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: 'C:\\Users\\username\\Downloads'
+}
+2025-02-22T04:14:54.581Z [filesystem] [info] Server transport closed
+2025-02-22T04:14:54.581Z [filesystem] [info] Client transport closed
+2025-02-22T04:14:54.582Z [filesystem] [info] Server transport closed unexpectedly, this is likely due to the process exiting early. If you are developing this MCP server you can add output to stderr (i.e. `console.error('...')` in JavaScript, `print('...', file=sys.stderr)` in python) and it will appear in this log.
+2025-02-22T04:14:54.582Z [filesystem] [error] Server disconnected. For troubleshooting guidance, please visit our [debugging documentation](https://modelcontextprotocol.io/docs/tools/debugging) {"context":"connection"}
+2025-02-22T04:14:54.583Z [filesystem] [info] Client transport closed
+Error accessing directory C:\Users\username\Desktop: Error: ENOENT: no such file or directory, stat 'C:\Users\username\Desktop'
+    at async Object.stat (node:internal/fs/promises:1032:18)
+    at async file:///C:/Users/bbell/AppData/Local/npm-cache/_npx/a3241bba59c344f5/node_modules/@modelcontextprotocol/server-filesystem/dist/index.js:33:23
+    at async Promise.all (index 0)
+    at async file:///C:/Users/bbell/AppData/Local/npm-cache/_npx/a3241bba59c344f5/node_modules/@modelcontextprotocol/server-filesystem/dist/index.js:31:1 {
+  errno: -4058,
+  code: 'ENOENT',
+  syscall: 'stat',
+  path: 'C:\\Users\\username\\Desktop'
+}
+2025-02-22T04:14:54.823Z [filesystem] [info] Server transport closed
+2025-02-22T04:14:54.823Z [filesystem] [info] Client transport closed
+2025-02-22T04:14:54.823Z [filesystem] [info] Server transport closed unexpectedly, this is likely due to the process exiting early. If you are developing this MCP server you can add output to stderr (i.e. `console.error('...')` in JavaScript, `print('...', file=sys.stderr)` in python) and it will appear in this log.
+2025-02-22T04:14:54.823Z [filesystem] [error] Server disconnected. For troubleshooting guidance, please visit our [debugging documentation](https://modelcontextprotocol.io/docs/tools/debugging) {"context":"connection"}
+2025-02-22T04:14:54.823Z [filesystem] [info] Client transport closed

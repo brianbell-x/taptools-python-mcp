@@ -84,7 +84,7 @@ class WalletTokenTrade(BaseModel):
     tokenBAmount: float = Field(..., description="Amount of second token", example=5)
 
 class WalletTokenTradesResponse(BaseModel):
-    __root__: List[WalletTokenTrade] = Field(..., description="Token trade history for wallet", example=[{
+    trades: List[WalletTokenTrade] = Field(..., description="Token trade history for wallet", example=[{
         "action": "Buy",
         "time": 1692781200,
         "tokenA": "63bb8054f9142b46582198e280f489b3c928dfecb390b0cb39a5cbfe74657374746f6b656e32",
@@ -106,7 +106,7 @@ class WalletValueTrend(BaseModel):
     value: float = Field(..., description="Portfolio value", example=57)
 
 class WalletValueTrendedResponse(BaseModel):
-    __root__: List[WalletValueTrend] = Field(..., description="Interval value", example=[{
+    values: List[WalletValueTrend] = Field(..., description="Interval value", example=[{
         "time": 1692781200,
         "value": 57
     }])

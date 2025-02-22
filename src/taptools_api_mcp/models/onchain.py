@@ -46,7 +46,7 @@ class UTXO(BaseModel):
     lovelace: str = Field(..., description="ADA amount in lovelace", example="3703342")
 
 class AddressUTXOsResponse(BaseModel):
-    __root__: List[UTXO] = Field(..., description="UTxOs", example=[{
+    utxos: List[UTXO] = Field(..., description="UTxOs", example=[{
         "hash": "a88d97638faf9fa63e4f4f8b4fd4664ae3505ae050bc48afde48f3c1e7b1e07b",
         "index": 0,
         "lovelace": "3703342",

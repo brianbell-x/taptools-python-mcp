@@ -1,0 +1,42 @@
+2025-02-22T04:15:40.819Z [server] [info] Initializing server...
+2025-02-22T04:15:41.255Z [server] [info] Server started and connected successfully
+2025-02-22T04:15:41.262Z [server] [info] Message from client: {"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"claude-ai","version":"0.1.0"}},"jsonrpc":"2.0","id":0}
+2025-02-22T04:15:41.965Z [server] [info] Initializing server...
+2025-02-22T04:15:41.999Z [server] [info] Server started and connected successfully
+2025-02-22T04:15:42.140Z [server] [info] Message from client: {"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"claude-ai","version":"0.1.0"}},"jsonrpc":"2.0","id":0}
+  × Failed to download `pydantic-settings==2.8.0`
+  ├─▶ Failed to read from the distribution cache
+  ╰─▶ The process cannot access the file because it is being used by another
+      process. (os error 32)
+  help: `pydantic-settings` (v2.8.0) was included because `mcp` (v1.3.0)
+        depends on `pydantic-settings`
+2025-02-22T04:15:43.453Z [server] [info] Server transport closed
+2025-02-22T04:15:43.454Z [server] [info] Client transport closed
+2025-02-22T04:15:43.454Z [server] [info] Server transport closed unexpectedly, this is likely due to the process exiting early. If you are developing this MCP server you can add output to stderr (i.e. `console.error('...')` in JavaScript, `print('...', file=sys.stderr)` in python) and it will appear in this log.
+2025-02-22T04:15:43.454Z [server] [error] Server disconnected. For troubleshooting guidance, please visit our [debugging documentation](https://modelcontextprotocol.io/docs/tools/debugging) {"context":"connection"}
+2025-02-22T04:15:43.456Z [server] [info] Client transport closed
+Installed 26 packages in 114ms
+Failed to run server: attempted relative import with no known parent package
+2025-02-22T04:15:50.582Z [server] [info] Server transport closed
+2025-02-22T04:15:50.582Z [server] [info] Client transport closed
+2025-02-22T04:15:50.582Z [server] [info] Server transport closed unexpectedly, this is likely due to the process exiting early. If you are developing this MCP server you can add output to stderr (i.e. `console.error('...')` in JavaScript, `print('...', file=sys.stderr)` in python) and it will appear in this log.
+2025-02-22T04:15:50.582Z [server] [error] Server disconnected. For troubleshooting guidance, please visit our [debugging documentation](https://modelcontextprotocol.io/docs/tools/debugging) {"context":"connection"}
+2025-02-22T04:15:50.583Z [server] [info] Client transport closed
+2025-02-22T04:16:21.580Z [server] [info] Initializing server...
+2025-02-22T04:16:21.596Z [server] [info] Server started and connected successfully
+2025-02-22T04:16:21.600Z [server] [info] Message from client: {"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"claude-ai","version":"0.1.0"}},"jsonrpc":"2.0","id":0}
+2025-02-22T04:16:22.223Z [server] [info] Initializing server...
+2025-02-22T04:16:22.240Z [server] [info] Server started and connected successfully
+2025-02-22T04:16:22.250Z [server] [info] Message from client: {"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"claude-ai","version":"0.1.0"}},"jsonrpc":"2.0","id":0}
+Failed to run server: attempted relative import with no known parent package
+Failed to run server: attempted relative import with no known parent package
+2025-02-22T04:16:24.416Z [server] [info] Server transport closed
+2025-02-22T04:16:24.416Z [server] [info] Client transport closed
+2025-02-22T04:16:24.417Z [server] [info] Server transport closed unexpectedly, this is likely due to the process exiting early. If you are developing this MCP server you can add output to stderr (i.e. `console.error('...')` in JavaScript, `print('...', file=sys.stderr)` in python) and it will appear in this log.
+2025-02-22T04:16:24.417Z [server] [error] Server disconnected. For troubleshooting guidance, please visit our [debugging documentation](https://modelcontextprotocol.io/docs/tools/debugging) {"context":"connection"}
+2025-02-22T04:16:24.418Z [server] [info] Client transport closed
+2025-02-22T04:16:24.418Z [server] [info] Server transport closed
+2025-02-22T04:16:24.418Z [server] [info] Client transport closed
+2025-02-22T04:16:24.418Z [server] [info] Server transport closed unexpectedly, this is likely due to the process exiting early. If you are developing this MCP server you can add output to stderr (i.e. `console.error('...')` in JavaScript, `print('...', file=sys.stderr)` in python) and it will appear in this log.
+2025-02-22T04:16:24.418Z [server] [error] Server disconnected. For troubleshooting guidance, please visit our [debugging documentation](https://modelcontextprotocol.io/docs/tools/debugging) {"context":"connection"}
+2025-02-22T04:16:24.418Z [server] [info] Client transport closed

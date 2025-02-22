@@ -28,7 +28,7 @@ class TokenDebtLoan(BaseModel):
     time: int = Field(..., description="Unix timestamp of loan creation", example=1692694800)
 
 class TokenDebtLoansResponse(BaseModel):
-    __root__: List[TokenDebtLoan] = Field(..., description="Active P2P loans.", example=[{
+    loans: List[TokenDebtLoan] = Field(..., description="Active P2P loans.", example=[{
         "collateralAmount": 1000,
         "collateralToken": "b46b12f0a61721a0358988f806a7c1562e1e622d5886a73194051f336d6131",
         "collateralValue": 500,
@@ -71,7 +71,7 @@ class TokenDebtOffer(BaseModel):
     time: int = Field(..., description="Unix timestamp of offer creation", example=1692694800)
 
 class TokenDebtOffersResponse(BaseModel):
-    __root__: List[TokenDebtOffer] = Field(..., description="Active P2P loan offers.", example=[{
+    offers: List[TokenDebtOffer] = Field(..., description="Active P2P loan offers.", example=[{
         "collateralAmount": 1000,
         "collateralToken": "b46b12f0a61721a0358988f806a7c1562e1e622d5886a73194051f336d6131",
         "collateralValue": 500,
@@ -106,7 +106,7 @@ class TokenHolder(BaseModel):
     amount: float = Field(..., description="Token amount held", example=1000000)
 
 class TokenTopHoldersResponse(BaseModel):
-    __root__: List[TokenHolder] = Field(..., description="Top token holders.", example=[{
+    holders: List[TokenHolder] = Field(..., description="Top token holders.", example=[{
         "address": "stake1u8mvwfn298a4dkm92hrgeupnnuzhxfwl5lauzuejl5cf8esrtjn6w",
         "amount": 1000000
     }])
@@ -120,7 +120,7 @@ class TokenIndicatorsRequest(BaseModel):
     quote: Optional[str] = Field(None, description="Quote currency")
 
 class TokenIndicatorsResponse(BaseModel):
-    __root__: List[float] = Field(..., description="Indicator values.", example=[25.4, 26.1, 25.8, 26.3])
+    values: List[float] = Field(..., description="Indicator values.", example=[25.4, 26.1, 25.8, 26.3])
 
 # Token Links Models
 class TokenLinksRequest(BaseModel):
@@ -176,7 +176,7 @@ class TokenOHLCV(BaseModel):
     volume: float = Field(..., description="Trading volume", example=100000)
 
 class TokenOHLCVResponse(BaseModel):
-    __root__: List[TokenOHLCV] = Field(..., description="OHLCV data points.", example=[{
+    data: List[TokenOHLCV] = Field(..., description="OHLCV data points.", example=[{
         "time": 1692781200,
         "open": 1.45,
         "high": 1.6,
@@ -203,7 +203,7 @@ class TokenPool(BaseModel):
     tokenBTicker: str = Field(..., description="Second token ticker", example="ADA")
 
 class TokenPoolsResponse(BaseModel):
-    __root__: List[TokenPool] = Field(..., description="Liquidity pools.", example=[{
+    pools: List[TokenPool] = Field(..., description="Liquidity pools.", example=[{
         "exchange": "Minswap",
         "lpTokenUnit": "f22d56bc0daec9ff1e2d4d90061563517d279d3c998747d55234822874657374746f6b656e",
         "onchainId": "pool1234",
@@ -220,7 +220,7 @@ class TokenPricesRequest(BaseModel):
     units: List[str] = Field(..., description="List of token units to get prices for")
 
 class TokenPricesResponse(BaseModel):
-    __root__: Dict[str, float] = Field(..., description="Token prices by unit", example={
+    prices: Dict[str, float] = Field(..., description="Token prices by unit", example={
         "63bb8054f9142b46582198e280f489b3c928dfecb390b0cb39a5cbfe74657374746f6b656e32": 1.5,
         "b46b12f0a61721a0358988f806a7c1562e1e622d5886a73194051f336d6131": 2.3
     })
@@ -231,7 +231,7 @@ class TokenPriceChangesRequest(BaseModel):
     timeframes: Optional[str] = Field(None, description="Comma-delimited timeframes (5m,1h,4h,6h,24h,7d,30d,60d,90d)")
 
 class TokenPriceChangesResponse(BaseModel):
-    __root__: Dict[str, float] = Field(..., description="Price changes by timeframe", example={
+    changes: Dict[str, float] = Field(..., description="Price changes by timeframe", example={
         "5m": 0.01,
         "1h": 0.02,
         "24h": -0.05,
@@ -246,7 +246,7 @@ class TokenQuoteResponse(BaseModel):
     price: float = Field(..., description="Current quote price", example=1.5)
 
 class TokenQuoteAvailableResponse(BaseModel):
-    __root__: List[str] = Field(..., description="Available quote currencies.", example=["USD", "EUR", "ADA"])
+    currencies: List[str] = Field(..., description="Available quote currencies.", example=["USD", "EUR", "ADA"])
 
 # Token Top Liquidity Models
 class TokenTopLiquidityRequest(BaseModel):
@@ -260,7 +260,7 @@ class TokenLiquidity(BaseModel):
     unit: str = Field(..., description="Token unit", example="63bb8054f9142b46582198e280f489b3c928dfecb390b0cb39a5cbfe74657374746f6b656e32")
 
 class TokenTopLiquidityResponse(BaseModel):
-    __root__: List[TokenLiquidity] = Field(..., description="Tokens ranked by liquidity.", example=[{
+    tokens: List[TokenLiquidity] = Field(..., description="Tokens ranked by liquidity.", example=[{
         "unit": "63bb8054f9142b46582198e280f489b3c928dfecb390b0cb39a5cbfe74657374746f6b656e32",
         "ticker": "TEST",
         "price": 1.5,
@@ -304,7 +304,7 @@ class TokenTopMcap(BaseModel):
     unit: str = Field(..., description="Token unit identifier", example="63bb8054f9142b46582198e280f489b3c928dfecb390b0cb39a5cbfe74657374746f6b656e32")
 
 class TokenTopMcapResponse(BaseModel):
-    __root__: List[TokenTopMcap] = Field(..., description="Tokens ranked by market cap.", example=[{
+    tokens: List[TokenTopMcap] = Field(..., description="Tokens ranked by market cap.", example=[{
         "unit": "63bb8054f9142b46582198e280f489b3c928dfecb390b0cb39a5cbfe74657374746f6b656e32",
         "ticker": "TEST",
         "price": 1.5,
@@ -327,7 +327,7 @@ class TokenTopVolume(BaseModel):
     volume: float = Field(..., description="Trading volume", example=1000000)
 
 class TokenTopVolumeResponse(BaseModel):
-    __root__: List[TokenTopVolume] = Field(..., description="Tokens ranked by volume.", example=[{
+    tokens: List[TokenTopVolume] = Field(..., description="Tokens ranked by volume.", example=[{
         "unit": "63bb8054f9142b46582198e280f489b3c928dfecb390b0cb39a5cbfe74657374746f6b656e32",
         "ticker": "TEST",
         "price": 1.5,
@@ -361,7 +361,7 @@ class TokenTrade(BaseModel):
     tokenBName: str = Field(..., description="Name of second token", example="ADA")
 
 class TokenTradesResponse(BaseModel):
-    __root__: List[TokenTrade] = Field(..., description="Token trades across DEXes.", example=[{
+    trades: List[TokenTrade] = Field(..., description="Token trades across DEXes.", example=[{
         "action": "buy",
         "address": "addr1qxvpuw8dmmwvzs4lvjmuamn7l748n9wuvrumuz27v8mt6kzktn257cny8gcw0f99ft99apqdakca6grf9stpptjdyevqffsm7e",
         "exchange": "Minswap",

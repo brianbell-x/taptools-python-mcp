@@ -1,0 +1,48 @@
+2025-02-22T04:14:49.169Z [info] [filesystem] Initializing server...
+2025-02-22T04:14:49.194Z [info] [filesystem] Server started and connected successfully
+2025-02-22T04:14:49.196Z [info] [filesystem] Message from client: {"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"claude-ai","version":"0.1.0"}},"jsonrpc":"2.0","id":0}
+2025-02-22T04:14:49.729Z [info] [filesystem] Initializing server...
+2025-02-22T04:14:49.756Z [info] [filesystem] Server started and connected successfully
+2025-02-22T04:14:49.758Z [info] [filesystem] Message from client: {"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"claude-ai","version":"0.1.0"}},"jsonrpc":"2.0","id":0}
+2025-02-22T04:14:54.581Z [info] [filesystem] Server transport closed
+2025-02-22T04:14:54.582Z [info] [filesystem] Client transport closed
+2025-02-22T04:14:54.582Z [info] [filesystem] Server transport closed unexpectedly, this is likely due to the process exiting early. If you are developing this MCP server you can add output to stderr (i.e. `console.error('...')` in JavaScript, `print('...', file=sys.stderr)` in python) and it will appear in this log.
+2025-02-22T04:14:54.582Z [error] [filesystem] Server disconnected. For troubleshooting guidance, please visit our [debugging documentation](https://modelcontextprotocol.io/docs/tools/debugging)
+2025-02-22T04:14:54.583Z [info] [filesystem] Client transport closed
+2025-02-22T04:14:54.823Z [info] [filesystem] Server transport closed
+2025-02-22T04:14:54.823Z [info] [filesystem] Client transport closed
+2025-02-22T04:14:54.823Z [info] [filesystem] Server transport closed unexpectedly, this is likely due to the process exiting early. If you are developing this MCP server you can add output to stderr (i.e. `console.error('...')` in JavaScript, `print('...', file=sys.stderr)` in python) and it will appear in this log.
+2025-02-22T04:14:54.823Z [error] [filesystem] Server disconnected. For troubleshooting guidance, please visit our [debugging documentation](https://modelcontextprotocol.io/docs/tools/debugging)
+2025-02-22T04:14:54.824Z [info] [filesystem] Client transport closed
+2025-02-22T04:15:40.820Z [info] [server] Initializing server...
+2025-02-22T04:15:41.256Z [info] [server] Server started and connected successfully
+2025-02-22T04:15:41.262Z [info] [server] Message from client: {"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"claude-ai","version":"0.1.0"}},"jsonrpc":"2.0","id":0}
+2025-02-22T04:15:41.965Z [info] [server] Initializing server...
+2025-02-22T04:15:41.999Z [info] [server] Server started and connected successfully
+2025-02-22T04:15:42.141Z [info] [server] Message from client: {"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"claude-ai","version":"0.1.0"}},"jsonrpc":"2.0","id":0}
+2025-02-22T04:15:43.453Z [info] [server] Server transport closed
+2025-02-22T04:15:43.454Z [info] [server] Client transport closed
+2025-02-22T04:15:43.454Z [info] [server] Server transport closed unexpectedly, this is likely due to the process exiting early. If you are developing this MCP server you can add output to stderr (i.e. `console.error('...')` in JavaScript, `print('...', file=sys.stderr)` in python) and it will appear in this log.
+2025-02-22T04:15:43.455Z [error] [server] Server disconnected. For troubleshooting guidance, please visit our [debugging documentation](https://modelcontextprotocol.io/docs/tools/debugging)
+2025-02-22T04:15:43.456Z [info] [server] Client transport closed
+2025-02-22T04:15:50.582Z [info] [server] Server transport closed
+2025-02-22T04:15:50.582Z [info] [server] Client transport closed
+2025-02-22T04:15:50.582Z [info] [server] Server transport closed unexpectedly, this is likely due to the process exiting early. If you are developing this MCP server you can add output to stderr (i.e. `console.error('...')` in JavaScript, `print('...', file=sys.stderr)` in python) and it will appear in this log.
+2025-02-22T04:15:50.582Z [error] [server] Server disconnected. For troubleshooting guidance, please visit our [debugging documentation](https://modelcontextprotocol.io/docs/tools/debugging)
+2025-02-22T04:15:50.583Z [info] [server] Client transport closed
+2025-02-22T04:16:21.581Z [info] [server] Initializing server...
+2025-02-22T04:16:21.596Z [info] [server] Server started and connected successfully
+2025-02-22T04:16:21.600Z [info] [server] Message from client: {"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"claude-ai","version":"0.1.0"}},"jsonrpc":"2.0","id":0}
+2025-02-22T04:16:22.223Z [info] [server] Initializing server...
+2025-02-22T04:16:22.240Z [info] [server] Server started and connected successfully
+2025-02-22T04:16:22.250Z [info] [server] Message from client: {"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"claude-ai","version":"0.1.0"}},"jsonrpc":"2.0","id":0}
+2025-02-22T04:16:24.416Z [info] [server] Server transport closed
+2025-02-22T04:16:24.416Z [info] [server] Client transport closed
+2025-02-22T04:16:24.417Z [info] [server] Server transport closed unexpectedly, this is likely due to the process exiting early. If you are developing this MCP server you can add output to stderr (i.e. `console.error('...')` in JavaScript, `print('...', file=sys.stderr)` in python) and it will appear in this log.
+2025-02-22T04:16:24.417Z [error] [server] Server disconnected. For troubleshooting guidance, please visit our [debugging documentation](https://modelcontextprotocol.io/docs/tools/debugging)
+2025-02-22T04:16:24.418Z [info] [server] Client transport closed
+2025-02-22T04:16:24.418Z [info] [server] Server transport closed
+2025-02-22T04:16:24.418Z [info] [server] Client transport closed
+2025-02-22T04:16:24.418Z [info] [server] Server transport closed unexpectedly, this is likely due to the process exiting early. If you are developing this MCP server you can add output to stderr (i.e. `console.error('...')` in JavaScript, `print('...', file=sys.stderr)` in python) and it will appear in this log.
+2025-02-22T04:16:24.418Z [error] [server] Server disconnected. For troubleshooting guidance, please visit our [debugging documentation](https://modelcontextprotocol.io/docs/tools/debugging)
+2025-02-22T04:16:24.419Z [info] [server] Client transport closed

@@ -1,22 +1,15 @@
-"""
-TapTools MCP server implementation.
-
-Exposes TapTools endpoints as MCP tools.
-"""
 import os
 import json
-import asyncio
 import logging
-from datetime import datetime
-from typing import Optional, Dict, Any, List
-from pydantic import BaseModel, Field
-from dotenv import load_dotenv
-import httpx
+from typing import Optional
+from contextlib import asynccontextmanager
 
-from mcp.server.stdio import stdio_server
+import httpx
+from dotenv import load_dotenv
+from pydantic import BaseModel, Field
+
 from mcp.server.fastmcp import FastMCP, Context
 from mcp.types import ErrorData
-from mcp.shared.exceptions import McpError
 
 from .api.tokens import TokensAPI
 from .api.nfts import NftsAPI
@@ -24,56 +17,90 @@ from .api.market import MarketAPI
 from .api.integration import IntegrationAPI
 from .api.onchain import OnchainAPI
 from .api.wallet import WalletAPI
-from .utils.exceptions import TapToolsError, ErrorCode, ErrorType
 
-# Request/Response Models
 from .models.tokens import (
-    TokenMcapRequest, TokenHoldersRequest, TokenTopHoldersRequest,
-    TokenQuoteRequest, TokenIndicatorsRequest, TokenLinksRequest,
-    TokenOHLCVRequest, TokenPoolsRequest, TokenPricesRequest,
-    TokenPriceChangesRequest, TokenTradesRequest, TokenTradingStatsRequest,
-    TokenDebtLoansRequest, TokenDebtOffersRequest, TokenTopLiquidityRequest,
-    TokenTopMcapRequest, TokenTopVolumeRequest
+    TokenMcapRequest, TokenMcapResponse,
+    TokenHoldersRequest, TokenHoldersResponse,
+    TokenTopHoldersRequest, TokenTopHoldersResponse,
+    TokenPricesRequest, TokenPricesResponse,
+    TokenPriceChangesRequest, TokenPriceChangesResponse,
+    TokenOHLCVRequest, TokenOHLCVResponse,
+    TokenTradesRequest, TokenTradesResponse,
+    TokenTradingStatsRequest, TokenTradingStatsResponse,
+    TokenTopLiquidityRequest, TokenTopLiquidityResponse,
+    TokenTopMcapRequest, TokenTopMcapResponse,
+    TokenTopVolumeRequest, TokenTopVolumeResponse,
+    TokenLinksRequest, TokenLinksResponse,
+    TokenIndicatorsRequest, TokenIndicatorsResponse,
+    TokenDebtLoansRequest, TokenDebtLoansResponse,
+    TokenDebtOffersRequest, TokenDebtOffersResponse,
+    TokenPoolsRequest, TokenPoolsResponse,
+    TokenQuoteRequest, TokenQuoteResponse
 )
+
 from .models.nfts import (
-    NFTAssetSalesRequest, NFTCollectionStatsRequest,
-    NFTAssetStatsRequest, NFTAssetTraitsRequest,
-    NFTCollectionAssetsRequest, NFTCollectionInfoRequest,
-    NFTCollectionExtendedStatsRequest, NFTCollectionHoldersDistributionRequest,
-    NFTCollectionTopHoldersRequest, NFTCollectionHoldersTrendedRequest,
-    NFTCollectionListingsRequest, NFTCollectionListingsDepthRequest,
-    NFTCollectionIndividualListingsRequest, NFTCollectionListingsTrendedRequest,
-    NFTCollectionOHLCVRequest, NFTCollectionTradesRequest,
-    NFTCollectionTradeStatsRequest, NFTCollectionVolumeTrendedRequest,
-    NFTCollectionTraitPricesRequest, NFTCollectionTraitRarityRequest,
-    NFTCollectionTraitRarityRankRequest, NFTMarketStatsRequest,
-    NFTMarketExtendedStatsRequest, NFTMarketVolumeTrendedRequest,
-    NFTMarketplaceStatsRequest, NFTTopTimeframeRequest,
-    NFTTopVolumeRequest, NFTTopVolumeExtendedRequest
+    NFTAssetSalesRequest, NFTAssetSalesResponse,
+    NFTCollectionStatsRequest, NFTCollectionStatsResponse,
+    NFTAssetStatsRequest, NFTAssetStatsResponse,
+    NFTAssetTraitsRequest, NFTAssetTraitsResponse,
+    NFTCollectionAssetsRequest, NFTCollectionAssetsResponse,
+    NFTCollectionInfoRequest, NFTCollectionInfoResponse,
+    NFTCollectionExtendedStatsRequest, NFTCollectionExtendedStatsResponse,
+    NFTCollectionHoldersDistributionRequest, NFTCollectionHoldersDistributionResponse,
+    NFTCollectionTopHoldersRequest, NFTCollectionTopHoldersResponse,
+    NFTCollectionHoldersTrendedRequest, NFTCollectionHoldersTrendedResponse,
+    NFTCollectionListingsRequest, NFTCollectionListingsResponse,
+    NFTCollectionListingsDepthRequest, NFTCollectionListingsDepthResponse,
+    NFTCollectionIndividualListingsRequest, NFTCollectionIndividualListingsResponse,
+    NFTCollectionListingsTrendedRequest, NFTCollectionListingsTrendedResponse,
+    NFTCollectionOHLCVRequest, NFTCollectionOHLCVResponse,
+    NFTCollectionTradesRequest, NFTCollectionTradesResponse,
+    NFTCollectionTradeStatsRequest, NFTCollectionTradeStatsResponse,
+    NFTCollectionVolumeTrendedRequest, NFTCollectionVolumeTrendedResponse,
+    NFTCollectionTraitPricesRequest, NFTCollectionTraitPricesResponse,
+    NFTCollectionTraitRarityRequest, NFTCollectionTraitRarityResponse,
+    NFTCollectionTraitRarityRankRequest, NFTCollectionTraitRarityRankResponse,
+    NFTMarketStatsRequest, NFTMarketStatsResponse,
+    NFTMarketExtendedStatsRequest, NFTMarketExtendedStatsResponse,
+    NFTMarketVolumeTrendedRequest, NFTMarketVolumeTrendedResponse,
+    NFTMarketplaceStatsRequest, NFTMarketplaceStatsResponse,
+    NFTTopTimeframeRequest, NFTTopTimeframeResponse,
+    NFTTopVolumeRequest, NFTTopVolumeResponse,
+    NFTTopVolumeExtendedRequest, NFTTopVolumeExtendedResponse
 )
+
 from .models.market import (
-    MarketStatsRequest, MetricsResponse
+    MarketStatsRequest,
+    MetricsResponse
 )
+
 from .models.integration import (
-    IntegrationAssetRequest, IntegrationBlockRequest,
-    IntegrationEventsRequest, IntegrationExchangeRequest,
-    IntegrationPairRequest, IntegrationPolicyAssetsRequest
+    IntegrationAssetRequest, IntegrationAssetResponse,
+    IntegrationPolicyAssetsRequest, IntegrationPolicyAssetsResponse,
+    IntegrationBlockRequest, IntegrationBlockResponse,
+    IntegrationEventsRequest, IntegrationEventsResponse,
+    IntegrationExchangeRequest, IntegrationExchangeResponse,
+    IntegrationPairRequest, IntegrationPairResponse
 )
+
 from .models.onchain import (
-    AssetSupplyRequest, AddressInfoRequest,
-    AddressUTXOsRequest, TransactionUTXOsRequest
+    AssetSupplyRequest, AssetSupplyResponse,
+    AddressInfoRequest, AddressInfoResponse,
+    AddressUTXOsRequest, AddressUTXOsResponse,
+    TransactionUTXOsRequest, TransactionUTXOsResponse
 )
+
 from .models.wallet import (
-    WalletPortfolioPositionsRequest, WalletTokenTradesRequest,
-    WalletValueTrendedRequest
+    WalletPortfolioPositionsRequest, WalletPortfolioPositionsResponse,
+    WalletTokenTradesRequest, WalletTokenTrade,
+    WalletValueTrendedRequest, WalletValueTrend
 )
+
 
 logger = logging.getLogger("taptools_mcp")
 
 class ServerConfig(BaseModel):
-    """
-    Holds config values for the TapTools MCP server.
-    """
+    """Holds config values for the TapTools MCP server."""
     api_key: str = Field(..., description="TapTools API key", alias="TAPTOOLS_API_KEY")
     base_url: str = Field(
         default="https://openapi.taptools.io/api/v1",
@@ -89,277 +116,325 @@ class ServerConfig(BaseModel):
             raise ValueError("TAPTOOLS_API_KEY not found. Please set it in .env or environment.")
         return cls(TAPTOOLS_API_KEY=api_key)
 
+
+@asynccontextmanager
+async def taptools_lifespan(config: ServerConfig):
+    """
+    Lifespan context manager for the TapToolsServer.
+    Creates an httpx.AsyncClient at startup, closes at shutdown.
+    """
+    client = httpx.AsyncClient(
+        base_url=config.base_url,
+        headers={
+            "Authorization": f"Bearer {config.api_key}",
+            "Content-Type": "application/json"
+        },
+        timeout=30.0
+    )
+    try:
+        yield {"client": client}
+    finally:
+        await client.aclose()
+
+
 class TapToolsServer:
     """
     The main server that registers TapTools endpoints as MCP tools.
     """
     def __init__(self, config: ServerConfig):
         self.config = config
-        self.app = FastMCP(name="taptools-server")
-        self.tokens_api: Optional[TokensAPI] = None
-        self.nfts_api: Optional[NftsAPI] = None
-        self.market_api: Optional[MarketAPI] = None
-        self.integration_api: Optional[IntegrationAPI] = None
-        self.onchain_api: Optional[OnchainAPI] = None
-        self.wallet_api: Optional[WalletAPI] = None
+
+        # Create the MCP app with a lifespan manager
+        self.app = FastMCP(
+            name="taptools-server",
+            lifespan=lambda: taptools_lifespan(config)
+        )
+
+        # Attach API interfaces
+        self.tokens_api = TokensAPI()
+        self.nfts_api = NftsAPI()
+        self.market_api = MarketAPI()
+        self.integration_api = IntegrationAPI()
+        self.onchain_api = OnchainAPI()
+        self.wallet_api = WalletAPI()
 
         # Register all tools
         self.register_tools()
 
-    async def __aenter__(self):
-        self._client = httpx.AsyncClient(
-            base_url=self.config.base_url,
-            headers={
-                "Authorization": f"Bearer {self.config.api_key}",
-                "Content-Type": "application/json"
-            },
-            timeout=30.0
-        )
-        self.tokens_api = TokensAPI(self._client)
-        self.nfts_api = NftsAPI(self._client)
-        self.market_api = MarketAPI(self._client)
-        self.integration_api = IntegrationAPI(self._client)
-        self.onchain_api = OnchainAPI(self._client)
-        self.wallet_api = WalletAPI(self._client)
-        return self
-
-    async def __aexit__(self, exc_type, exc_val, exc_tb):
-        await self._client.aclose()
-
-    async def handle_error(self, e: Exception, endpoint: Optional[str] = None, ctx: Optional[Context] = None) -> None:
-        import traceback
-        tb = traceback.format_exc()
-        error_context = {
-            'endpoint': endpoint,
-            'error_type': type(e).__name__,
-            'error_class': e.__class__.__name__,
-            'traceback': tb
-        }
-        if isinstance(e, TapToolsError):
-            error_context.update({
-                'tap_tools_error_type': e.error_type.value,
-                'status_code': e.status_code,
-                'has_error_details': bool(e.error_details),
-                'has_retry_after': bool(e.retry_after)
-            })
-        error_msg = f"API error{f' in {endpoint}' if endpoint else ''}: {str(e)}"
-        if ctx:
-            await ctx.log("error", error_msg)
-            await ctx.debug(f"Error context:\n{json.dumps(error_context, indent=2)}")
-        else:
-            logger.error(error_msg, extra=error_context)
-            logger.debug(f"Error context:\n{json.dumps(error_context, indent=2)}")
-
-        if isinstance(e, TapToolsError):
-            error_code, message = e.to_mcp_error()
-            if endpoint:
-                message = f"[{endpoint}] {message}"
-            if e.error_details:
-                debug_msg = (
-                    f"Detailed error information:\n"
-                    f"{json.dumps(e.error_details, indent=2)}"
-                )
-                if ctx:
-                    await ctx.debug(debug_msg)
-                else:
-                    logger.debug(debug_msg)
-            if e.retry_after:
-                info_msg = (
-                    f"Rate limit will reset at: {e.retry_after.isoformat()} "
-                    f"(in {(e.retry_after - datetime.now()).total_seconds():.1f}s)"
-                )
-                if ctx:
-                    await ctx.info(info_msg)
-                else:
-                    logger.info(info_msg)
-            if e.status_code:
-                message = f"{message} (HTTP {e.status_code})"
-            raise McpError(ErrorData(code=error_code, message=message))
-        else:
-            if ctx:
-                await ctx.debug(f"Unexpected error traceback:\n{tb}")
-            else:
-                logger.debug(f"Unexpected error traceback:\n{tb}")
-            message = f"Unexpected error: {str(e)}"
-            if endpoint:
-                message = f"[{endpoint}] {message}"
-            raise McpError(ErrorData(
-                code=ErrorCode.API_ERROR,
-                message=message
-            ))
-
     def register_tools(self):
-        """
-        Register MCP tools for TapTools endpoints.
-        """
-        # ----------------------
-        # Token Tools
-        # ----------------------
+        """Register MCP tools for TapTools endpoints."""
+
+        #----------------------------------
+        # Connection / Auth
+        #----------------------------------
+        @self.app.tool(name="verify_connection", description="Verify TapTools API authentication")
+        async def verify_connection(_: dict, ctx: Context) -> dict:
+            """
+            No parameters. Verifies the API key is valid by calling a simple endpoint.
+            """
+            return await self.tokens_api.verify_connection(ctx)
+
+        #----------------------------------
+        # Tokens Tools
+        #----------------------------------
         @self.app.tool(name="get_token_mcap", description="Get token market cap info")
-        async def handle_get_token_mcap(request: TokenMcapRequest, ctx: Context) -> str:
-            try:
-                await ctx.debug(f"Fetching market cap for token {request.unit}")
-                result = await self.tokens_api.get_token_mcap(request)
-                await ctx.info("Successfully retrieved token market cap data")
-                return json.dumps(result.model_dump(), indent=2)
-            except Exception as e:
-                await self.handle_error(e, "get_token_mcap", ctx)
+        async def handle_get_token_mcap(request: TokenMcapRequest, ctx: Context) -> TokenMcapResponse:
+            return await self.tokens_api.get_token_mcap(request, ctx)
 
         @self.app.tool(name="get_token_holders", description="Get total number of token holders")
-        async def handle_get_token_holders(request: TokenHoldersRequest, ctx: Context) -> str:
-            try:
-                await ctx.debug(f"Fetching holder count for token {request.unit}")
-                result = await self.tokens_api.get_token_holders(request)
-                await ctx.info("Successfully retrieved token holder count")
-                return json.dumps(result.model_dump(), indent=2)
-            except Exception as e:
-                await self.handle_error(e, "get_token_holders", ctx)
+        async def handle_get_token_holders(request: TokenHoldersRequest, ctx: Context) -> TokenHoldersResponse:
+            return await self.tokens_api.get_token_holders(request, ctx)
 
         @self.app.tool(name="get_token_holders_top", description="Get top token holders")
-        async def handle_get_token_holders_top(request: TokenTopHoldersRequest, ctx: Context) -> str:
-            try:
-                await ctx.debug(f"Fetching top holders for token {request.unit}")
-                await ctx.progress(0.2, "Initiating top holders query")
-                result = await self.tokens_api.get_token_holders_top(request)
-                await ctx.progress(1.0, "Retrieved top holders data")
-                await ctx.info("Successfully retrieved top token holders")
-                return json.dumps(result.model_dump(), indent=2)
-            except Exception as e:
-                await self.handle_error(e, "get_token_holders_top", ctx)
+        async def handle_get_token_holders_top(request: TokenTopHoldersRequest, ctx: Context) -> TokenTopHoldersResponse:
+            return await self.tokens_api.get_token_holders_top(request, ctx)
 
-        # ----------------------
-        # NFT Tools
-        # ----------------------
+        @self.app.tool(name="post_token_prices", description="Get aggregated prices for up to 100 token units.")
+        async def handle_post_token_prices(request: TokenPricesRequest, ctx: Context) -> TokenPricesResponse:
+            return await self.tokens_api.post_token_prices(request, ctx)
+
+        @self.app.tool(name="get_token_price_changes", description="Get token price % changes over multiple timeframes.")
+        async def handle_get_token_price_changes(request: TokenPriceChangesRequest, ctx: Context) -> TokenPriceChangesResponse:
+            return await self.tokens_api.get_token_price_percent_changes(request, ctx)
+
+        @self.app.tool(name="get_token_trades", description="Get token trades across DEXes.")
+        async def handle_get_token_trades(request: TokenTradesRequest, ctx: Context) -> TokenTradesResponse:
+            return await self.tokens_api.get_token_trades(request, ctx)
+
+        @self.app.tool(name="get_token_trade_stats", description="Get aggregated trading stats for a token.")
+        async def handle_get_token_trade_stats(request: TokenTradingStatsRequest, ctx: Context) -> TokenTradingStatsResponse:
+            return await self.tokens_api.get_token_trade_stats(request, ctx)
+
+        @self.app.tool(name="get_token_ohlcv", description="Get token OHLCV data.")
+        async def handle_get_token_ohlcv(request: TokenOHLCVRequest, ctx: Context) -> TokenOHLCVResponse:
+            return await self.tokens_api.get_token_ohlcv(request, ctx)
+
+        @self.app.tool(name="get_token_links", description="Get a token's social/contact links.")
+        async def handle_get_token_links(request: TokenLinksRequest, ctx: Context) -> TokenLinksResponse:
+            return await self.tokens_api.get_token_links(request, ctx)
+
+        @self.app.tool(name="get_token_indicators", description="Get technical indicators (EMA, RSI, MACD) for a token.")
+        async def handle_get_token_indicators(request: TokenIndicatorsRequest, ctx: Context) -> TokenIndicatorsResponse:
+            return await self.tokens_api.get_token_indicators(request, ctx)
+
+        @self.app.tool(name="get_token_pools", description="Get active liquidity pools for a token.")
+        async def handle_get_token_pools(request: TokenPoolsRequest, ctx: Context) -> TokenPoolsResponse:
+            return await self.tokens_api.get_token_pools(request, ctx)
+
+        @self.app.tool(name="get_token_debt_loans", description="Get active P2P loans for a given token.")
+        async def handle_get_token_debt_loans(request: TokenDebtLoansRequest, ctx: Context) -> TokenDebtLoansResponse:
+            return await self.tokens_api.get_token_active_loans(request, ctx)
+
+        @self.app.tool(name="get_token_debt_offers", description="Get active P2P loan offers for a given token.")
+        async def handle_get_token_debt_offers(request: TokenDebtOffersRequest, ctx: Context) -> TokenDebtOffersResponse:
+            return await self.tokens_api.get_token_loan_offers(request, ctx)
+
+        @self.app.tool(name="get_token_top_tokens_by_liquidity", description="Get tokens ranked by total DEX liquidity.")
+        async def handle_get_token_top_tokens_by_liquidity(request: TokenTopLiquidityRequest, ctx: Context) -> TokenTopLiquidityResponse:
+            return await self.tokens_api.get_token_top_tokens_by_liquidity(request, ctx)
+
+        @self.app.tool(name="get_token_top_tokens_by_mcap", description="Get tokens ranked by market cap.")
+        async def handle_get_token_top_tokens_by_mcap(request: TokenTopMcapRequest, ctx: Context) -> TokenTopMcapResponse:
+            return await self.tokens_api.get_token_top_tokens_by_mcap(request, ctx)
+
+        @self.app.tool(name="get_token_top_tokens_by_volume", description="Get tokens ranked by volume.")
+        async def handle_get_token_top_tokens_by_volume(request: TokenTopVolumeRequest, ctx: Context) -> TokenTopVolumeResponse:
+            return await self.tokens_api.get_token_top_tokens_by_volume(request, ctx)
+
+        @self.app.tool(name="get_token_quote", description="Get current quote price (e.g., ADA/USD).")
+        async def handle_get_token_quote(request: TokenQuoteRequest, ctx: Context) -> TokenQuoteResponse:
+            return await self.tokens_api.get_quote_price(request, ctx)
+
+        #----------------------------------
+        # NFTs Tools
+        #----------------------------------
         @self.app.tool(name="get_nft_asset_sales", description="Get NFT asset sales history")
-        async def handle_get_nft_asset_sales(request: NFTAssetSalesRequest, ctx: Context) -> str:
-            try:
-                await ctx.debug(f"Fetching sales history for NFT policy={request.policy} name={request.name}")
-                await ctx.progress(0.2, "Initiating sales history query")
-                result = await self.nfts_api.get_asset_sales(request)
-                await ctx.progress(1.0, "Retrieved sales history")
-                await ctx.info("Successfully retrieved NFT asset sales history")
-                return json.dumps(result.model_dump(), indent=2)
-            except Exception as e:
-                await self.handle_error(e, "get_nft_asset_sales", ctx)
+        async def handle_get_nft_asset_sales(request: NFTAssetSalesRequest, ctx: Context) -> NFTAssetSalesResponse:
+            return await self.nfts_api.get_nft_asset_sales(request, ctx)
+
+        @self.app.tool(name="get_nft_asset_stats", description="Get stats for a specific NFT asset.")
+        async def handle_get_nft_asset_stats(request: NFTAssetStatsRequest, ctx: Context) -> NFTAssetStatsResponse:
+            return await self.nfts_api.get_nft_asset_stats(request, ctx)
+
+        @self.app.tool(name="get_nft_asset_traits", description="Get trait data for a specific NFT asset.")
+        async def handle_get_nft_asset_traits(request: NFTAssetTraitsRequest, ctx: Context) -> NFTAssetTraitsResponse:
+            return await self.nfts_api.get_nft_asset_traits(request, ctx)
+
+        @self.app.tool(name="get_nft_collection_assets", description="Get a list of NFTs in a collection.")
+        async def handle_get_nft_collection_assets(request: NFTCollectionAssetsRequest, ctx: Context) -> NFTCollectionAssetsResponse:
+            return await self.nfts_api.get_nft_collection_assets(request, ctx)
+
+        @self.app.tool(name="get_nft_collection_info", description="Get basic info for an NFT collection.")
+        async def handle_get_nft_collection_info(request: NFTCollectionInfoRequest, ctx: Context) -> NFTCollectionInfoResponse:
+            return await self.nfts_api.get_nft_collection_info(request, ctx)
 
         @self.app.tool(name="get_nft_collection_stats", description="Get NFT collection stats")
-        async def handle_get_nft_collection_stats(request: NFTCollectionStatsRequest, ctx: Context) -> str:
-            try:
-                await ctx.debug(f"Fetching stats for collection {request.policy}")
-                result = await self.nfts_api.get_collection_stats(request)
-                await ctx.info("Successfully retrieved collection stats")
-                return json.dumps(result.model_dump(), indent=2)
-            except Exception as e:
-                await self.handle_error(e, "get_nft_collection_stats", ctx)
+        async def handle_get_nft_collection_stats(request: NFTCollectionStatsRequest, ctx: Context) -> NFTCollectionStatsResponse:
+            return await self.nfts_api.get_nft_collection_stats(request, ctx)
 
-        # ----------------------
+        @self.app.tool(name="get_nft_collection_stats_extended", description="Get extended NFT collection stats.")
+        async def handle_get_nft_collection_stats_extended(request: NFTCollectionExtendedStatsRequest, ctx: Context) -> NFTCollectionExtendedStatsResponse:
+            return await self.nfts_api.get_nft_collection_stats_extended(request, ctx)
+
+        @self.app.tool(name="get_nft_collection_holders_distribution", description="Get distribution of NFT holders for a collection.")
+        async def handle_get_nft_collection_holders_distribution(request: NFTCollectionHoldersDistributionRequest, ctx: Context) -> NFTCollectionHoldersDistributionResponse:
+            return await self.nfts_api.get_nft_collection_holders_distribution(request, ctx)
+
+        @self.app.tool(name="get_nft_collection_holders_top", description="Get top NFT holders in a collection.")
+        async def handle_get_nft_collection_holders_top(request: NFTCollectionTopHoldersRequest, ctx: Context) -> NFTCollectionTopHoldersResponse:
+            return await self.nfts_api.get_nft_collection_holders_top(request, ctx)
+
+        @self.app.tool(name="get_nft_collection_holders_trended", description="Get trended holder counts by day.")
+        async def handle_get_nft_collection_holders_trended(request: NFTCollectionHoldersTrendedRequest, ctx: Context) -> NFTCollectionHoldersTrendedResponse:
+            return await self.nfts_api.get_nft_collection_holders_trended(request, ctx)
+
+        @self.app.tool(name="get_nft_collection_listings", description="Get active listings for an NFT collection.")
+        async def handle_get_nft_collection_listings(request: NFTCollectionListingsRequest, ctx: Context) -> NFTCollectionListingsResponse:
+            return await self.nfts_api.get_nft_collection_listings(request, ctx)
+
+        @self.app.tool(name="get_nft_collection_listings_depth", description="Get listings depth data for an NFT collection.")
+        async def handle_get_nft_collection_listings_depth(request: NFTCollectionListingsDepthRequest, ctx: Context) -> NFTCollectionListingsDepthResponse:
+            return await self.nfts_api.get_nft_collection_listings_depth(request, ctx)
+
+        @self.app.tool(name="get_nft_collection_listings_individual", description="Get individual listings for an NFT collection.")
+        async def handle_get_nft_collection_listings_individual(request: NFTCollectionIndividualListingsRequest, ctx: Context) -> NFTCollectionIndividualListingsResponse:
+            return await self.nfts_api.get_nft_collection_listings_individual(request, ctx)
+
+        @self.app.tool(name="get_nft_collection_listings_trended", description="Get trended listing counts/floor for an NFT collection.")
+        async def handle_get_nft_collection_listings_trended(request: NFTCollectionListingsTrendedRequest, ctx: Context) -> NFTCollectionListingsTrendedResponse:
+            return await self.nfts_api.get_nft_collection_listings_trended(request, ctx)
+
+        @self.app.tool(name="get_nft_collection_ohlcv", description="Get floor price OHLCV for an NFT collection.")
+        async def handle_get_nft_collection_ohlcv(request: NFTCollectionOHLCVRequest, ctx: Context) -> NFTCollectionOHLCVResponse:
+            return await self.nfts_api.get_nft_collection_ohlcv(request, ctx)
+
+        @self.app.tool(name="get_nft_collection_trades", description="Get trades for an NFT collection.")
+        async def handle_get_nft_collection_trades(request: NFTCollectionTradesRequest, ctx: Context) -> NFTCollectionTradesResponse:
+            return await self.nfts_api.get_nft_collection_trades(request, ctx)
+
+        @self.app.tool(name="get_nft_collection_trade_stats", description="Get trade stats for an NFT collection.")
+        async def handle_get_nft_collection_trade_stats(request: NFTCollectionTradeStatsRequest, ctx: Context) -> NFTCollectionTradeStatsResponse:
+            return await self.nfts_api.get_nft_collection_trades_stats(request, ctx)
+
+        @self.app.tool(name="get_nft_collection_volume_and_sales", description="Get volume/sales trends for an NFT collection.")
+        async def handle_get_nft_collection_volume_and_sales(request: NFTCollectionVolumeTrendedRequest, ctx: Context) -> NFTCollectionVolumeTrendedResponse:
+            return await self.nfts_api.get_nft_collection_volume_and_sales(request, ctx)
+
+        @self.app.tool(name="get_nft_collection_traits_price", description="Get trait floor prices in an NFT collection.")
+        async def handle_get_nft_collection_traits_price(request: NFTCollectionTraitPricesRequest, ctx: Context) -> NFTCollectionTraitPricesResponse:
+            return await self.nfts_api.get_nft_collection_traits_price(request, ctx)
+
+        @self.app.tool(name="get_nft_collection_traits_rarity", description="Get trait rarity for an NFT collection.")
+        async def handle_get_nft_collection_traits_rarity(request: NFTCollectionTraitRarityRequest, ctx: Context) -> NFTCollectionTraitRarityResponse:
+            return await self.nfts_api.get_nft_collection_traits_rarity(request, ctx)
+
+        @self.app.tool(name="get_nft_collection_traits_rarity_rank", description="Get an NFT's rarity rank within a collection.")
+        async def handle_get_nft_collection_traits_rarity_rank(request: NFTCollectionTraitRarityRankRequest, ctx: Context) -> NFTCollectionTraitRarityRankResponse:
+            return await self.nfts_api.get_nft_collection_traits_rarity_rank(request, ctx)
+
+        @self.app.tool(name="get_nft_market_stats", description="Get top-level NFT market stats (addresses, sales, volume).")
+        async def handle_get_nft_market_stats(request: NFTMarketStatsRequest, ctx: Context) -> NFTMarketStatsResponse:
+            return await self.nfts_api.get_nft_market_stats(request, ctx)
+
+        @self.app.tool(name="get_nft_market_stats_extended", description="Get NFT market stats + percentage changes.")
+        async def handle_get_nft_market_stats_extended(request: NFTMarketExtendedStatsRequest, ctx: Context) -> NFTMarketExtendedStatsResponse:
+            return await self.nfts_api.get_nft_market_stats_extended(request, ctx)
+
+        @self.app.tool(name="get_nft_market_volume_and_sales", description="Get overall NFT market volume trends.")
+        async def handle_get_nft_market_volume_and_sales(request: NFTMarketVolumeTrendedRequest, ctx: Context) -> NFTMarketVolumeTrendedResponse:
+            return await self.nfts_api.get_nft_market_volume_and_sales(request, ctx)
+
+        @self.app.tool(name="get_nft_marketplaces_stats", description="Get stats for an NFT marketplace.")
+        async def handle_get_nft_marketplaces_stats(request: NFTMarketplaceStatsRequest, ctx: Context) -> NFTMarketplaceStatsResponse:
+            return await self.nfts_api.get_nft_marketplaces_stats(request, ctx)
+
+        @self.app.tool(name="get_nft_top_rankings", description="Get top NFT rankings by market cap, volume, etc.")
+        async def handle_get_nft_top_rankings(request: NFTTopTimeframeRequest, ctx: Context) -> NFTTopTimeframeResponse:
+            return await self.nfts_api.get_nft_top_rankings(request, ctx)
+
+        @self.app.tool(name="get_nft_top_collections_by_volume", description="Get top NFT collections by volume.")
+        async def handle_get_nft_top_collections_by_volume(request: NFTTopVolumeRequest, ctx: Context) -> NFTTopVolumeResponse:
+            return await self.nfts_api.get_nft_top_collections_by_volume(request, ctx)
+
+        @self.app.tool(name="get_nft_top_collections_by_volume_with_changes", description="Get top NFT collections by volume with % changes.")
+        async def handle_get_nft_top_collections_by_volume_with_changes(request: NFTTopVolumeExtendedRequest, ctx: Context) -> NFTTopVolumeExtendedResponse:
+            return await self.nfts_api.get_nft_top_collections_by_volume_with_changes(request, ctx)
+
+        #----------------------------------
         # Market Tools
-        # ----------------------
+        #----------------------------------
         @self.app.tool(name="get_market_stats", description="Get market-wide statistics")
-        async def handle_get_market_stats(params: Dict[str, Any], ctx: Context) -> str:
+        async def handle_get_market_stats(request: dict, ctx: Context) -> dict:
             """
-            We accept a dict for the convenience of optional
-            'quote', 'include_deprecated', 'min_liquidity' etc.
-            Example:
-              {
-                "quote": "USD",
-                "include_deprecated": true,
-                "min_liquidity": 10000
-              }
+            For demonstration, we show a basic dict approach. 
+            Expects fields: quote (str), include_deprecated (bool), min_liquidity (float).
             """
-            try:
-                quote = params.get("quote", "ADA")
-                include_deprecated = bool(params.get("include_deprecated", False))
-                min_liquidity = float(params.get("min_liquidity", 0))
-                await ctx.debug(f"Fetching market-wide stats. quote={quote}, deprecated={include_deprecated}, liquidity={min_liquidity}")
-                result = await self.market_api.get_market_stats(
-                    quote=quote,
-                    include_deprecated=include_deprecated,
-                    min_liquidity=min_liquidity
-                )
-                await ctx.info("Successfully retrieved market statistics")
-                return json.dumps(result, indent=2)
-            except Exception as e:
-                await self.handle_error(e, "get_market_stats", ctx)
+            quote = request.get("quote", "ADA")
+            include_deprecated = bool(request.get("include_deprecated", False))
+            min_liquidity = float(request.get("min_liquidity", 0))
+            return await self.market_api.get_market_stats(quote, include_deprecated, min_liquidity, ctx)
 
         @self.app.tool(name="get_market_metrics", description="Get daily request counts from past 30 days")
-        async def handle_get_market_metrics(ctx: Context) -> str:
-            try:
-                await ctx.debug("Fetching daily request counts")
-                result = await self.market_api.get_metrics()
-                await ctx.info("Successfully retrieved market metrics")
-                return json.dumps(result.model_dump(), indent=2)
-            except Exception as e:
-                await self.handle_error(e, "get_market_metrics", ctx)
+        async def handle_get_market_metrics(_: dict, ctx: Context) -> MetricsResponse:
+            return await self.market_api.get_metrics(ctx)
 
-        # NEW tool: get_market_overview
         @self.app.tool(name="get_market_overview", description="Get overview with gainers/losers/trending.")
-        async def handle_get_market_overview(ctx: Context) -> str:
-            try:
-                await ctx.debug("Fetching market overview (gainers, losers, trending)")
-                result = await self.market_api.get_market_overview()
-                await ctx.info("Successfully retrieved market overview")
-                return json.dumps(result, indent=2)
-            except Exception as e:
-                await self.handle_error(e, "get_market_overview", ctx)
+        async def handle_get_market_overview(_: dict, ctx: Context) -> dict:
+            return await self.market_api.get_market_overview(ctx)
 
-        # ----------------------
+        #----------------------------------
         # Integration Tools
-        # ----------------------
+        #----------------------------------
         @self.app.tool(name="get_integration_asset", description="Get asset details by ID")
-        async def handle_get_integration_asset(request: IntegrationAssetRequest, ctx: Context) -> str:
-            try:
-                await ctx.debug(f"Fetching asset details for ID {request.id}")
-                result = await self.integration_api.get_asset(request)
-                await ctx.info("Successfully retrieved asset details")
-                return json.dumps(result.model_dump(), indent=2)
-            except Exception as e:
-                await self.handle_error(e, "get_integration_asset", ctx)
+        async def handle_get_integration_asset(request: IntegrationAssetRequest, ctx: Context) -> IntegrationAssetResponse:
+            return await self.integration_api.get_asset(request, ctx)
 
-        # NEW tool: get_policy_assets
         @self.app.tool(name="get_policy_assets", description="Get assets under a given policy ID.")
-        async def handle_get_policy_assets(request: IntegrationPolicyAssetsRequest, ctx: Context) -> str:
-            try:
-                await ctx.debug(f"Fetching assets for policy {request.id}, page={request.page}, perPage={request.perPage}")
-                result = await self.integration_api.get_policy_assets(request)
-                await ctx.info("Successfully retrieved policy assets")
-                return json.dumps(result.model_dump(), indent=2)
-            except Exception as e:
-                await self.handle_error(e, "get_policy_assets", ctx)
+        async def handle_get_policy_assets(request: IntegrationPolicyAssetsRequest, ctx: Context) -> IntegrationPolicyAssetsResponse:
+            return await self.integration_api.get_policy_assets(request, ctx)
 
-        # ----------------------
+        #----------------------------------
         # Onchain Tools
-        # ----------------------
+        #----------------------------------
         @self.app.tool(name="get_asset_supply", description="Get onchain asset supply")
-        async def handle_get_asset_supply(request: AssetSupplyRequest, ctx: Context) -> str:
-            try:
-                await ctx.debug(f"Fetching onchain supply for asset {request.unit}")
-                result = await self.onchain_api.get_asset_supply(request)
-                await ctx.info("Successfully retrieved asset supply")
-                return json.dumps(result.model_dump(), indent=2)
-            except Exception as e:
-                await self.handle_error(e, "get_asset_supply", ctx)
+        async def handle_get_asset_supply(request: AssetSupplyRequest, ctx: Context) -> AssetSupplyResponse:
+            return await self.onchain_api.get_asset_supply(request, ctx)
 
-        @self.app.tool(name="verify_connection", description="Verify TapTools API authentication")
-        async def handle_verify_connection(ctx: Context) -> str:
-            try:
-                await ctx.debug("Verifying TapTools API connection")
-                result = await self.tokens_api.verify_connection()
-                await ctx.info("Successfully verified API connection")
-                return json.dumps(result, indent=2)
-            except Exception as e:
-                await self.handle_error(e, "verify_connection", ctx)
+        #----------------------------------
+        # Wallet Tools
+        #----------------------------------
+        @self.app.tool(name="get_wallet_portfolio", description="Get wallet portfolio positions.")
+        async def handle_get_wallet_portfolio(request: WalletPortfolioPositionsRequest, ctx: Context) -> WalletPortfolioPositionsResponse:
+            return await self.wallet_api.get_wallet_portfolio_positions(request, ctx)
 
-    async def run_stdio_async(self):
-        async with stdio_server() as (read_stream, write_stream):
-            await self.app.run(read_stream, write_stream, self.app.create_initialization_options())
+        @self.app.tool(name="get_wallet_trades_tokens", description="Get token trade history for a wallet.")
+        async def handle_get_wallet_trades_tokens(request: WalletTokenTradesRequest, ctx: Context) -> list:
+            # or we can return a Pydantic model that has a field of trades
+            trades = await self.wallet_api.get_wallet_trades_tokens(request, ctx)
+            return [t.dict() for t in trades]
 
-async def main():
-    try:
-        config = ServerConfig.from_env()
-        server = TapToolsServer(config)
-        async with server:
-            await server.run_stdio_async()
-    except Exception as e:
-        logger.error(f"Failed to start TapToolsServer: {str(e)}")
-        raise
+        @self.app.tool(name="get_wallet_value_trended", description="Get historical wallet value in 4hr intervals.")
+        async def handle_get_wallet_value_trended(request: WalletValueTrendedRequest, ctx: Context) -> list:
+            trends = await self.wallet_api.get_wallet_value_trended(request, ctx)
+            return [t.dict() for t in trends]
+
+    def run(self, transport: str = "stdio"):
+        """
+        Run the MCP server using the specified transport.
+        For now, we only support "stdio".
+        SSE or other transports can be added in future.
+        """
+        if transport != "stdio":
+            raise ValueError("Currently only 'stdio' transport is supported.")
+        # Start the server on stdio
+        self.app.run("stdio")
+
+
+def main():
+    config = ServerConfig.from_env()
+    server = TapToolsServer(config)
+    server.run(transport="stdio")
+
+
+if __name__ == "__main__":
+    main()
