@@ -24,6 +24,14 @@ def sample_market_stats():
     }
 
 @pytest.fixture
+def sample_metrics_data():
+    """Sample metrics data for testing."""
+    return [
+        {"calls": 120, "time": 1690000000},
+        {"calls": 200, "time": 1690086400}
+    ]
+
+@pytest.fixture
 def sample_market_overview():
     """Sample market overview data for testing."""
     return {
@@ -140,6 +148,57 @@ class TestMarketAPI:
         
         result = await api.get_market_overview()
         assert result == invalid_data  # API should return raw response, validation is handled by models
+
+    async def test_get_metrics_success(self, mock_client, mock_response, sample_metrics_data):
+        """Test successful metrics retrieval."""
+        mock_client.get.return_value = mock_response(200, sample_metrics_data)
+        api = MarketAPI(mock_client)
+        
+        result = await api.get_metrics()
+        
+        assert len(result.metrics) == 2
+        assert result.metrics[0].calls == 120
+        assert result.metrics[0].time == 1690000000
+        assert result.metrics[1].calls == 200
+        assert result.metrics[1].time == 1690086400
+        
+        mock_client.get.assert_called_once_with("/metrics")
+
+    async def test_get_metrics_http_429(self, mock_client, mock_response):
+        """Test handling of 429 Too Many Requests for metrics."""
+        mock_client.get.return_value = mock_response(429, {"error": "Rate limit exceeded"})
+        api = MarketAPI(mock_client)
+        
+        with pytest.raises(TapToolsError) as exc:
+            await api.get_metrics()
+        assert "429" in str(exc.value)
+
+    async def test_get_metrics_http_500(self, mock_client, mock_response):
+        """Test handling of 500 Internal Server Error for metrics."""
+        mock_client.get.return_value = mock_response(500, {"error": "Internal server error"})
+        api = MarketAPI(mock_client)
+        
+        with pytest.raises(TapToolsError) as exc:
+            await api.get_metrics()
+        assert "500" in str(exc.value)
+
+    async def test_get_metrics_connection_error(self, mock_client):
+        """Test handling of connection errors for metrics."""
+        mock_client.get.side_effect = httpx.RequestError("Connection failed")
+        api = MarketAPI(mock_client)
+        
+        with pytest.raises(TapToolsError) as exc:
+            await api.get_metrics()
+        assert "Connection error" in str(exc.value)
+
+    async def test_get_metrics_invalid_response(self, mock_client, mock_response):
+        """Test handling of invalid response data for metrics."""
+        invalid_data = [{"invalid": "data"}]  # Missing required fields
+        mock_client.get.return_value = mock_response(200, invalid_data)
+        api = MarketAPI(mock_client)
+        
+        with pytest.raises(ValueError):  # Model validation should fail
+            await api.get_metrics()
 
     async def test_get_market_stats_with_optional_params(self, mock_client, mock_response, sample_market_stats):
         """Test market stats retrieval with optional parameters."""

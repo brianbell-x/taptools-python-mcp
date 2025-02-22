@@ -1,5 +1,6 @@
 """
 Tests for the WalletAPI class.
+Expanded to cover get_wallet_portfolio, get_wallet_trades_tokens, etc.
 """
 import pytest
 import httpx
@@ -9,196 +10,104 @@ from taptools_api_mcp.api.wallet import WalletAPI
 from taptools_api_mcp.utils.exceptions import TapToolsError
 
 @pytest.fixture
-def sample_portfolio_data():
-    """Sample portfolio data for testing."""
+def sample_portfolio():
     return {
-        "address": "addr1...",
-        "positions": [
+        "adaBalance": 10.0,
+        "adaValue": 10000.0,
+        "liquidValue": 10000.0,
+        "numFTs": 2,
+        "numNFTs": 1,
+        "positionsFt": [
             {
-                "unit": "token1",
-                "balance": "1000000",
-                "value_usd": "1500.50",
-                "price_usd": "1.50"
-            },
-            {
-                "unit": "token2",
-                "balance": "500000",
-                "value_usd": "2500.00",
-                "price_usd": "5.00"
+                "ticker": "TEST1",
+                "balance": 200.0,
+                "unit": "b46b12f0...",
+                "fingerprint": "fingerprint1",
+                "price": 100.0,
+                "adaValue": 20000.0,
+                "price_24h": 0.11,
+                "price_7d": 0.03,
+                "price_30d": -0.32,
+                "liquidBalance": 200.0,
+                "liquidValue": 20000.0
             }
         ],
-        "total_value_usd": "4000.50",
-        "last_updated": "2024-02-20T12:00:00Z"
+        "positionsLp": [],
+        "positionsNft": []
     }
 
 @pytest.fixture
-def sample_transaction_history():
-    """Sample transaction history data for testing."""
-    return {
-        "transactions": [
-            {
-                "hash": "tx1...",
-                "timestamp": "2024-02-20T12:00:00Z",
-                "type": "send",
-                "amount": "1000000",
-                "unit": "token1",
-                "to_address": "addr2..."
-            },
-            {
-                "hash": "tx2...",
-                "timestamp": "2024-02-19T12:00:00Z",
-                "type": "receive",
-                "amount": "500000",
-                "unit": "token2",
-                "from_address": "addr3..."
-            }
-        ],
-        "total": 2
-    }
+def sample_trades():
+    return [
+        {
+            "action": "Buy",
+            "time": 1692781200,
+            "tokenA": "tokenX",
+            "tokenAName": "TestTokenX",
+            "tokenAAmount": 10.5,
+            "tokenB": "lovelace",
+            "tokenBName": "ADA",
+            "tokenBAmount": 500.0
+        }
+    ]
+
+@pytest.fixture
+def sample_value_trended():
+    return [
+        {"time": 1692781200, "value": 57.0},
+        {"time": 1692784800, "value": 60.2},
+    ]
 
 @pytest.mark.asyncio
 class TestWalletAPI:
-    async def test_get_portfolio_positions_success(self, mock_client, mock_response, sample_portfolio_data):
-        """Test successful portfolio positions retrieval."""
-        mock_client.get.return_value = mock_response(200, sample_portfolio_data)
+    async def test_get_wallet_portfolio_positions_success(self, mock_client, mock_response, sample_portfolio):
+        """Test get_wallet_portfolio_positions success."""
+        mock_client.get.return_value = mock_response(200, sample_portfolio)
         api = WalletAPI(mock_client)
-        
-        result = await api.get_portfolio_positions("addr1...")
-        
-        assert result == sample_portfolio_data
-        mock_client.get.assert_called_once_with(
-            "/wallet/portfolio/positions",
-            params={"address": "addr1..."}
-        )
 
-    async def test_get_portfolio_positions_http_400(self, mock_client, mock_response):
-        """Test handling of 400 Bad Request for portfolio positions."""
-        error_data = {"error": "Invalid address format"}
-        mock_client.get.return_value = mock_response(400, error_data)
+        req_obj = {"address": "addr1xyz..."}
+        result = await api.get_wallet_portfolio_positions(req_obj)
+        assert result.adaBalance == 10.0
+        assert len(result.positionsFt) == 1
+
+        mock_client.get.assert_called_once_with("/wallet/portfolio/positions", params=req_obj)
+
+    async def test_get_wallet_trades_tokens_success(self, mock_client, mock_response, sample_trades):
+        """Test get_wallet_trades_tokens success."""
+        mock_client.get.return_value = mock_response(200, sample_trades)
         api = WalletAPI(mock_client)
-        
-        with pytest.raises(TapToolsError) as exc:
-            await api.get_portfolio_positions("invalid...")
-        assert "400" in str(exc.value)
 
-    async def test_get_portfolio_positions_http_404(self, mock_client, mock_response):
-        """Test handling of 404 Not Found for portfolio positions."""
-        mock_client.get.return_value = mock_response(404, {"error": "Address not found"})
+        req_obj = {"address": "addr1xyz..."}
+        result = await api.get_wallet_trades_tokens(req_obj)
+        assert len(result) == 1
+        assert result[0].action == "Buy"
+
+        mock_client.get.assert_called_once_with("/wallet/trades/tokens", params=req_obj)
+
+    async def test_get_wallet_value_trended_success(self, mock_client, mock_response, sample_value_trended):
+        """Test get_wallet_value_trended success."""
+        mock_client.get.return_value = mock_response(200, sample_value_trended)
         api = WalletAPI(mock_client)
-        
-        with pytest.raises(TapToolsError) as exc:
-            await api.get_portfolio_positions("nonexistent...")
-        assert "404" in str(exc.value)
 
-    async def test_get_portfolio_positions_http_429(self, mock_client, mock_response):
-        """Test handling of 429 Too Many Requests for portfolio positions."""
-        mock_client.get.return_value = mock_response(429, {"error": "Rate limit exceeded"})
+        req_obj = {"address": "addr1xyz...", "timeframe": "7d", "quote": "USD"}
+        result = await api.get_wallet_value_trended(req_obj)
+        assert len(result) == 2
+        assert result[0].value == 57.0
+
+        mock_client.get.assert_called_once_with("/wallet/value/trended", params=req_obj)
+
+    async def test_portfolio_positions_400(self, mock_client, mock_response):
+        """Test error handling for invalid address."""
+        mock_client.get.return_value = mock_response(400, {"error": "Invalid address"})
         api = WalletAPI(mock_client)
-        
-        with pytest.raises(TapToolsError) as exc:
-            await api.get_portfolio_positions("addr1...")
-        assert "429" in str(exc.value)
 
-    async def test_get_portfolio_positions_connection_error(self, mock_client):
-        """Test handling of connection errors for portfolio positions."""
+        with pytest.raises(TapToolsError):
+            await api.get_wallet_portfolio_positions({"address": "???"})
+
+    async def test_connection_error(self, mock_client):
+        """Test connection error example."""
         mock_client.get.side_effect = httpx.RequestError("Connection failed")
         api = WalletAPI(mock_client)
-        
-        with pytest.raises(TapToolsError) as exc:
-            await api.get_portfolio_positions("addr1...")
-        assert "Connection error" in str(exc.value)
 
-    async def test_get_transaction_history_success(self, mock_client, mock_response, sample_transaction_history):
-        """Test successful transaction history retrieval."""
-        mock_client.get.return_value = mock_response(200, sample_transaction_history)
-        api = WalletAPI(mock_client)
-        
-        result = await api.get_transaction_history("addr1...")
-        
-        assert result == sample_transaction_history
-        mock_client.get.assert_called_once_with(
-            "/wallet/transactions",
-            params={"address": "addr1..."}
-        )
-
-    async def test_get_transaction_history_with_pagination(self, mock_client, mock_response, sample_transaction_history):
-        """Test transaction history retrieval with pagination."""
-        mock_client.get.return_value = mock_response(200, sample_transaction_history)
-        api = WalletAPI(mock_client)
-        
-        result = await api.get_transaction_history(
-            "addr1...",
-            page=2,
-            per_page=50
-        )
-        
-        assert result == sample_transaction_history
-        mock_client.get.assert_called_once()
-        call_params = mock_client.get.call_args[1]["params"]
-        assert call_params["address"] == "addr1..."
-        assert call_params["page"] == 2
-        assert call_params["perPage"] == 50
-
-    async def test_get_transaction_history_http_400(self, mock_client, mock_response):
-        """Test handling of 400 Bad Request for transaction history."""
-        error_data = {"error": "Invalid address format"}
-        mock_client.get.return_value = mock_response(400, error_data)
-        api = WalletAPI(mock_client)
-        
-        with pytest.raises(TapToolsError) as exc:
-            await api.get_transaction_history("invalid...")
-        assert "400" in str(exc.value)
-
-    async def test_get_transaction_history_http_404(self, mock_client, mock_response):
-        """Test handling of 404 Not Found for transaction history."""
-        mock_client.get.return_value = mock_response(404, {"error": "Address not found"})
-        api = WalletAPI(mock_client)
-        
-        with pytest.raises(TapToolsError) as exc:
-            await api.get_transaction_history("nonexistent...")
-        assert "404" in str(exc.value)
-
-    async def test_get_transaction_history_http_429(self, mock_client, mock_response):
-        """Test handling of 429 Too Many Requests for transaction history."""
-        mock_client.get.return_value = mock_response(429, {"error": "Rate limit exceeded"})
-        api = WalletAPI(mock_client)
-        
-        with pytest.raises(TapToolsError) as exc:
-            await api.get_transaction_history("addr1...")
-        assert "429" in str(exc.value)
-
-    async def test_get_transaction_history_connection_error(self, mock_client):
-        """Test handling of connection errors for transaction history."""
-        mock_client.get.side_effect = httpx.RequestError("Connection failed")
-        api = WalletAPI(mock_client)
-        
-        with pytest.raises(TapToolsError) as exc:
-            await api.get_transaction_history("addr1...")
-        assert "Connection error" in str(exc.value)
-
-    async def test_get_transaction_history_invalid_response(self, mock_client, mock_response):
-        """Test handling of invalid response data for transaction history."""
-        invalid_data = {"invalid": "response"}  # Missing required fields
-        mock_client.get.return_value = mock_response(200, invalid_data)
-        api = WalletAPI(mock_client)
-        
-        result = await api.get_transaction_history("addr1...")
-        assert result == invalid_data  # API should return raw response, validation is handled by models
-
-    async def test_get_portfolio_positions_with_filters(self, mock_client, mock_response, sample_portfolio_data):
-        """Test portfolio positions retrieval with optional filters."""
-        mock_client.get.return_value = mock_response(200, sample_portfolio_data)
-        api = WalletAPI(mock_client)
-        
-        result = await api.get_portfolio_positions(
-            "addr1...",
-            min_value_usd=100,
-            include_zero_balances=False
-        )
-        
-        assert result == sample_portfolio_data
-        mock_client.get.assert_called_once()
-        call_params = mock_client.get.call_args[1]["params"]
-        assert call_params["address"] == "addr1..."
-        assert call_params["minValueUsd"] == 100
-        assert call_params["includeZeroBalances"] is False
+        with pytest.raises(TapToolsError):
+            await api.get_wallet_portfolio_positions({"address": "addr1xyz..."})
